@@ -1,0 +1,20 @@
+.selected {
+  border-width: 2px;
+  border-color: #4299e1;
+  color: #4299e1;
+  cursor: not-allowed;
+}
+
+.selected:hover {
+  background-color: initial;
+}
+
+.toggle-on {
+  background-color: #dbeafe;
+  color: #1e40af;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.always-on-top-btn:hover {
+  background-color: #eff6ff;
+}

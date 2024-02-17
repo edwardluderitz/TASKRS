@@ -1,0 +1,113 @@
+const express = require('express');
+const mysql = require('mysql');
+const app = express();
+const fs = require('fs');
+const path = require('path');
+const JavaScriptObfuscator = require('javascript-obfuscator');
+
+require('dotenv').config();
+
+const dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  };
+
+const port = process.env.PORT
+
+app.get('/script.js', (req, res) => {
+    fs.readFile(path.join(__dirname, 'public', 'script.js'), 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Erro ao ler o arquivo');
+            return;
+        }
+
+        const obfuscatedCode = JavaScriptObfuscator.obfuscate(data, {
+            compact: true,
+            controlFlowFlattening: true,
+            controlFlowFlatteningThreshold: 0.75,
+            numbersToExpressions: true,
+            simplify: true,
+            stringArrayShuffle: true,
+            splitStrings: true,
+            stringArrayThreshold: 0.75
+        }).getObfuscatedCode();
+
+        res.setHeader('Content-Type', 'application/javascript');
+        res.send(obfuscatedCode);
+    });
+});
+
+app.use(express.json());
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'text/javascript');
+        }
+    }
+}));
+
+const pool = mysql.createPool({
+    connectionLimit: 10,
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+});
+
+console.log(pool._allConnections.length);
+
+app.post('/update_status', (req, res) => {
+    console.log('Requisição recebida:', req.body);
+
+    const { username, status, duration } = req.body;
+    const date = new Date().toISOString().split('T')[0];
+
+    pool.query('SELECT status FROM status_user WHERE username = ? AND date = ?', [username, date], (selectError, results) => {
+        if (selectError) {
+            console.error(selectError);
+            return res.status(500).send('Erro ao verificar o status existente');
+        }
+    
+        const durationInt = parseInt(duration, 10);
+        if (isNaN(durationInt)) {
+            return res.status(400).send('Duração inválida');
+        }
+    
+        let statuses = {};
+        if (results.length > 0) {
+            statuses = results[0].status.split(';').reduce((acc, curr) => {
+                const [key, val] = curr.split(':');
+                acc[key] = parseInt(val, 10) || 0;
+                return acc;
+            }, {});
+        }
+    
+        statuses[status] = (statuses[status] || 0) + durationInt;
+        const newStatus = Object.entries(statuses).map(([key, val]) => `${key}:${val}`).join(';');
+    
+        if (results.length > 0) {
+            pool.query('UPDATE status_user SET status = ? WHERE username = ? AND date = ?', [newStatus, username, date], (updateError) => {
+                if (updateError) {
+                    console.error(updateError);
+                    return res.status(500).send('Erro ao atualizar o status');
+                }
+                res.send('Status atualizado com sucesso');
+            });
+        } else {
+            pool.query('INSERT INTO status_user (username, status, date) VALUES (?, ?, ?)', [username, newStatus, date], (insertError) => {
+                if (insertError) {
+                    console.error(insertError);
+                    return res.status(500).send('Erro ao inserir o status');
+                }
+                res.send('Status inserido com sucesso');
+            });
+        }
+    });
+});  
+
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
+});
