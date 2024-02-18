@@ -2,10 +2,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
+  const registerBtn = document.getElementById('show-register-form');
 
   let startTime;
   let currentStatus = '';
 
+  registerBtn.addEventListener('click', () => {
+    loginContainer.style.display = 'none';
+    const registerContainer = document.createElement('div');
+    appContainer.style.display = 'block'; 
+    registerContainer.innerHTML = `
+        <form id="register-form">
+            <input type="text" id="register-username" placeholder="Usuário" required />
+            <input type="password" id="register-password" placeholder="Senha" required />
+            <input type="password" id="confirm-password" placeholder="Confirme a Senha" required />
+            <button type="submit">Cadastrar</button>
+        </form>
+    `;
+    appContainer.appendChild(registerContainer);
+
+    const registerForm = document.getElementById('register-form');
+    registerForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+
+        if (password !== confirmPassword) {
+            alert('As senhas não coincidem!');
+            return;
+        }
+    });
+});
+    
   function createStatusButton(statusName) {
     const button = document.createElement('button');
     button.classList.add('status-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
