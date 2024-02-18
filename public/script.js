@@ -58,10 +58,12 @@
           body: JSON.stringify(userData),
       })
       .then(response => {
-          if (!response.ok) {
-              return response.text().then(text => { throw new Error(text) });
-          }
-          return response.json(); 
+        if (!response.ok) {
+          return response.json().then(data => {
+            throw new Error(data.error);
+          });
+        }
+        return response.json(); 
       })
       .then(data => {
         alert('Registro concluído com sucesso!');
@@ -73,7 +75,7 @@
       })
       .catch(error => {
           console.error('Erro no registro:', error);
-          alert('Erro no registro. Tente novamente.');
+          alert('Erro no registro:' + error);
       });
     });
     
