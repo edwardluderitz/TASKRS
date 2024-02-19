@@ -1,18 +1,26 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const expressApp = require('./server.js');
+const path = require('path');
+
+let mainWindow;
 
 function createWindow() {
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true
         }
     });
 
     mainWindow.loadURL('http://localhost:3000');
 }
+
+ipcMain.on('toggle-always-on-top', (event, shouldSetAlwaysOnTop) => {
+    mainWindow.setAlwaysOnTop(shouldSetAlwaysOnTop);
+  });
 
 app.whenReady().then(createWindow);
 

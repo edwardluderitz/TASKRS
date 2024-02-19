@@ -155,7 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupAlwaysOnTopButtonEvent() {
     const alwaysOnTopButton = document.querySelector('.always-on-top-btn');
     alwaysOnTopButton.addEventListener('click', function () {
-      this.classList.toggle('toggle-on');
+      const shouldSetAlwaysOnTop = this.classList.toggle('toggle-on');
+      window.electron.ipcRenderer.send('toggle-always-on-top', shouldSetAlwaysOnTop);
     });
   }
 
