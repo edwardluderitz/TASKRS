@@ -13,9 +13,34 @@ const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME
-  };
+};
 
 const port = process.env.PORT
+
+app.get('/script.js', (req, res) => {
+    fs.readFile(path.join(__dirname, 'public', 'script.js'), 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Erro ao ler o arquivo');
+            return;
+        }
+
+        const obfuscatedCode = JavaScriptObfuscator.obfuscate(data, {
+            compact: true,
+            controlFlowFlattening: true,
+            controlFlowFlatteningThreshold: 0.75,
+            numbersToExpressions: true,
+            simplify: true,
+            stringArrayShuffle: true,
+            splitStrings: true,
+            stringArrayThreshold: 0.75
+        }).getObfuscatedCode();
+
+        res.setHeader('Content-Type', 'application/javascript');
+        res.send(obfuscatedCode);
+    });
+});
+
 
 app.use(express.json());
 app.use(express.static('public', {
@@ -64,30 +89,33 @@ app.post('/register', (req, res) => {
     });
 });
 
-app.get('/script.js', (req, res) => {
-    fs.readFile(path.join(__dirname, 'public', 'script.js'), 'utf8', (err, data) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('Erro ao ler o arquivo');
-            return;
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    pool.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, hashedPassword], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro interno do servidor' });
         }
 
-        const obfuscatedCode = JavaScriptObfuscator.obfuscate(data, {
-            compact: true,
-            controlFlowFlattening: true,
-            controlFlowFlatteningThreshold: 0.75,
-            numbersToExpressions: true,
-            simplify: true,
-            stringArrayShuffle: true,
-            splitStrings: true,
-            stringArrayThreshold: 0.75
-        }).getObfuscatedCode();
-
-        res.setHeader('Content-Type', 'application/javascript');
-        res.send(obfuscatedCode);
+        if (results.length > 0) {
+            const offset = -3;
+            const now = new Date();
+            now.setHours(now.getHours() + offset);
+            const lastLoginTime = now.toISOString().replace('T', ' ').substring(0, 19);
+            pool.query('UPDATE users SET last_login_time = ? WHERE username = ?', [lastLoginTime, username], (updateError) => {
+                if (updateError) {
+                    console.error(updateError);
+                }
+                res.json({ message: 'Login bem-sucedido', user: results[0] });
+            });
+        } else {
+            return res.status(401).json({ error: 'Usuário ou senha incorretos' });
+        }
     });
 });
-
 
 app.post('/update_status', (req, res) => {
     console.log('Requisição recebida:', req.body);
@@ -100,12 +128,12 @@ app.post('/update_status', (req, res) => {
             console.error(selectError);
             return res.status(500).send('Erro ao verificar o status existente');
         }
-    
+
         const durationInt = parseInt(duration, 10);
         if (isNaN(durationInt)) {
             return res.status(400).send('Duração inválida');
         }
-    
+
         let statuses = {};
         if (results.length > 0) {
             statuses = results[0].status.split(';').reduce((acc, curr) => {
@@ -114,10 +142,10 @@ app.post('/update_status', (req, res) => {
                 return acc;
             }, {});
         }
-    
+
         statuses[status] = (statuses[status] || 0) + durationInt;
         const newStatus = Object.entries(statuses).map(([key, val]) => `${key}:${val}`).join(';');
-    
+
         if (results.length > 0) {
             pool.query('UPDATE status_user SET status = ? WHERE username = ? AND date = ?', [newStatus, username, date], (updateError) => {
                 if (updateError) {
@@ -136,7 +164,7 @@ app.post('/update_status', (req, res) => {
             });
         }
     });
-});  
+});
 
 app.listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
