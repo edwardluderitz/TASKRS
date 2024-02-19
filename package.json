@@ -1,9 +1,9 @@
 {
   "name": "taskrs",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron ."
   },
   "keywords": [],
   "author": "Edward Luderitz",
@@ -14,5 +14,8 @@
     "express": "^4.18.2",
     "javascript-obfuscator": "^4.1.0",
     "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "electron": "^28.2.3"
   }
 }
