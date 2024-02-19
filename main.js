@@ -6,8 +6,8 @@ let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 240,
+        height: 300,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -16,6 +16,8 @@ function createWindow() {
     });
 
     mainWindow.loadURL('http://localhost:3000');
+
+    mainWindow.setMenu(null);
 }
 
 ipcMain.on('toggle-always-on-top', (event, shouldSetAlwaysOnTop) => {
