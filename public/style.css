@@ -18,3 +18,7 @@
 .always-on-top-btn:hover {
   background-color: #eff6ff;
 }
+
+.hiddens {
+  display: none;
+}

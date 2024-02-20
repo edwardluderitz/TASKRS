@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return response.json();
         })
         .then(data => {
-          alert('Registro concluído com sucesso!');
+          showDialog('Registro concluído com sucesso!');
           const registerContainer = document.getElementById('register-container');
           if (registerContainer) {
             appContainer.removeChild(registerContainer);
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => {
           console.error('Erro no registro:', error);
-          alert('Erro no registro:' + error);
+          showDialog('Erro no registro:' + error);
         });
     });
 
@@ -152,6 +152,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+
+function showDialog(message) {
+  const dialog = document.getElementById('custom-dialog');
+  const messageElement = document.getElementById('dialog-message');
+  messageElement.textContent = message;
+  dialog.classList.remove('hiddens');
+}
+
+
+function closeDialog() {
+  const dialog = document.getElementById('custom-dialog');
+  dialog.classList.add('hiddens');
+}
+
+document.getElementById('close-dialog').addEventListener('click', closeDialog);
+
+
   function setupAlwaysOnTopButtonEvent() {
     const alwaysOnTopButton = document.querySelector('.always-on-top-btn');
     alwaysOnTopButton.addEventListener('click', function () {
@@ -210,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(error => {
         console.error('Erro no login:', error);
-        alert('Erro no login:' + error);
+        showDialog('Erro no login:' + error);
       });
   });
 });
