@@ -1,3 +1,5 @@
+/* SERVER.JS */
+
 const express = require('express');
 const mysql = require('mysql');
 const app = express();
@@ -5,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const JavaScriptObfuscator = require('javascript-obfuscator');
+const session = require('express-session');
 
 require('dotenv').config();
 
@@ -89,6 +92,15 @@ app.post('/register', (req, res) => {
     });
 });
 
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+  }));
+  
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
@@ -109,7 +121,8 @@ app.post('/login', (req, res) => {
                 if (updateError) {
                     console.error(updateError);
                 }
-                res.json({ message: 'Login bem-sucedido', user: results[0] });
+                req.session.username = username;
+                res.json({ message: 'Login bem-sucedido', user: results[0], username: username });
             });
         } else {
             return res.status(401).json({ error: 'Usuário ou senha incorretos' });
@@ -117,10 +130,24 @@ app.post('/login', (req, res) => {
     });
 });
 
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return console.error(err);
+        }
+        res.redirect('/');
+    });
+});
+
 app.post('/update_status', (req, res) => {
     console.log('Requisição recebida:', req.body);
 
-    const { username, status, duration } = req.body;
+    if (!req.session.username) {
+        return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const username = req.session.username;
+    const {status, duration} = req.body;
     const date = new Date().toISOString().split('T')[0];
 
     pool.query('SELECT status FROM status_user WHERE username = ? AND date = ?', [username, date], (selectError, results) => {

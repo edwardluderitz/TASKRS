@@ -1,3 +1,5 @@
+/* MAIN.JS */
+
 const { app, BrowserWindow, ipcMain } = require('electron');
 const expressApp = require('./server.js');
 const path = require('path');

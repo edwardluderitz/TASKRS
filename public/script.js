@@ -1,3 +1,5 @@
+/* SCRIPT.JS */
+
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const appContainer = document.getElementById('app-container');
@@ -6,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let startTime;
   let currentStatus = '';
+  let loggedInUsername = '';
 
   registerBtn.addEventListener('click', () => {
     loginContainer.style.display = 'none';
@@ -119,28 +122,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (currentStatus !== '') {
             const statusData = {
-              username: 'edlouder',
-              status: currentStatus,
-              duration: duration
+                username: loggedInUsername,
+                status: currentStatus,
+                duration: duration
             };
-
+        
             fetch('/update_status', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(statusData),
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(statusData),
             })
-              .then(response => {
+            .then(response => {
                 if (!response.ok) {
-                  throw new Error('Erro na resposta do servidor');
+                    throw new Error('Erro na resposta do servidor');
                 }
                 return response.text();
-              })
-              .then(text => console.log(text))
-              .catch(error => console.error('Erro ao atualizar status:', error));
-          }
-
+            })
+            .then(text => console.log(text))
+            .catch(error => console.error('Erro ao atualizar status:', error));
+        }
+        
           startTime = new Date();
         }
 
@@ -221,10 +224,11 @@ document.getElementById('close-dialog').addEventListener('click', closeDialog);
       })
       .then(data => {
         console.log(data.message);
+        loggedInUsername = data.username;
         loginContainer.style.display = 'none';
         addButtonsToAppContainer();
         appContainer.style.display = 'block';
-      })
+    })
       .catch(error => {
         console.error('Erro no login:', error);
         showDialog('Erro no login:' + error);

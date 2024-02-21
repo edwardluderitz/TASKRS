@@ -4,3 +4,4 @@ npm install dotenv
 npm install -g javascript-obfuscator  
 npm install mysql  
 npm install express
+npm install express-session
