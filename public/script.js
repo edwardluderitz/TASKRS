@@ -10,20 +10,48 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentStatus = '';
   let loggedInUsername = '';
 
-  registerBtn.addEventListener('click', () => {
+  function showRegisterForm() {
     loginContainer.style.display = 'none';
+    appContainer.style.display = 'flex';
+    appContainer.style.flexDirection = 'column';
+    appContainer.style.alignItems = 'center';
+    appContainer.style.justifyContent = 'center';
+    appContainer.style.height = '100vh';
+
+  
     const registerContainer = document.createElement('div');
-    appContainer.style.display = 'block';
     registerContainer.id = 'register-container';
+    registerContainer.className = 'flex items-center justify-center';
     registerContainer.innerHTML = `
-          <form id="register-form">
-              <input type="text" id="register-username" placeholder="Usuário" required />
-              <input type="password" id="register-password" placeholder="Senha" required />
-              <input type="password" id="confirm-password" placeholder="Confirme a Senha" required />
-              <button type="submit">Cadastrar</button>
-          </form>
-      `;
+      <div class="w-full max-w-xs">
+        <form id="register-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+          <div class="mb-4">
+            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="register-username" placeholder="Usuário" required />
+          </div>
+          <div class="mb-4">
+            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="password" id="register-password" placeholder="Senha" required />
+          </div>
+          <div class="mb-4">
+            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="password" id="confirm-password" placeholder="Confirme a Senha" required />
+          </div>
+          <div class="flex flex-col space-y-4">
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Cadastrar
+            </button>
+            <button type="button" id="back-to-login" class="w-full text-blue-500 hover:text-blue-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+              Voltar
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+  
     appContainer.appendChild(registerContainer);
+    
+    document.getElementById('back-to-login').addEventListener('click', function() {
+      appContainer.removeChild(registerContainer);
+      loginContainer.style.display = 'flex';
+    });
 
     const registerForm = document.getElementById('register-form');
     registerForm.addEventListener('submit', async function (event) {
@@ -82,7 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-  });
+  }
+  registerBtn.addEventListener('click', showRegisterForm);
 
   function createStatusButton(statusName) {
     const button = document.createElement('button');
@@ -122,28 +151,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (currentStatus !== '') {
             const statusData = {
-                username: loggedInUsername,
-                status: currentStatus,
-                duration: duration
+              username: loggedInUsername,
+              status: currentStatus,
+              duration: duration
             };
-        
+
             fetch('/update_status', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(statusData),
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(statusData),
             })
-            .then(response => {
+              .then(response => {
                 if (!response.ok) {
-                    throw new Error('Erro na resposta do servidor');
+                  throw new Error('Erro na resposta do servidor');
                 }
                 return response.text();
-            })
-            .then(text => console.log(text))
-            .catch(error => console.error('Erro ao atualizar status:', error));
-        }
-        
+              })
+              .then(text => console.log(text))
+              .catch(error => console.error('Erro ao atualizar status:', error));
+          }
+
           startTime = new Date();
         }
 
@@ -156,20 +185,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
-function showDialog(message) {
-  const dialog = document.getElementById('custom-dialog');
-  const messageElement = document.getElementById('dialog-message');
-  messageElement.textContent = message;
-  dialog.classList.remove('hiddens');
-}
+  function showDialog(message) {
+    const dialog = document.getElementById('custom-dialog');
+    const messageElement = document.getElementById('dialog-message');
+    messageElement.textContent = message;
+    dialog.classList.remove('hiddens');
+  }
 
 
-function closeDialog() {
-  const dialog = document.getElementById('custom-dialog');
-  dialog.classList.add('hiddens');
-}
+  function closeDialog() {
+    const dialog = document.getElementById('custom-dialog');
+    dialog.classList.add('hiddens');
+  }
 
-document.getElementById('close-dialog').addEventListener('click', closeDialog);
+  document.getElementById('close-dialog').addEventListener('click', closeDialog);
 
 
   function setupAlwaysOnTopButtonEvent() {
@@ -228,7 +257,7 @@ document.getElementById('close-dialog').addEventListener('click', closeDialog);
         loginContainer.style.display = 'none';
         addButtonsToAppContainer();
         appContainer.style.display = 'block';
-    })
+      })
       .catch(error => {
         console.error('Erro no login:', error);
         showDialog('Erro no login:' + error);

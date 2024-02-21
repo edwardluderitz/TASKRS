@@ -10,13 +10,15 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 240,
         height: 300,
+        minWidth: 240, 
+        minHeight: 300, 
+        resizable: true, 
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true
         }
     });
-
     mainWindow.loadURL('http://localhost:3000');
 
     mainWindow.setMenu(null);
