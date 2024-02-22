@@ -180,6 +180,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
+
+        const statusName = this.innerText;
+  fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.requireNote) {
+        const noteText = prompt("Este status requer um comentário. Por favor, insira seu comentário:");
+        if (noteText) {
+          const noteData = {
+            username: loggedInUsername,
+            buttons: statusName,
+            noteText: noteText
+          };
+          fetch('/submit-note', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(noteData),
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Erro ao submeter o comentário');
+            }
+            console.log('Comentário submetido com sucesso');
+          })
+          .catch(error => console.error('Erro:', error));
+        }
+      }
+    })
+    .catch(error => console.error('Erro ao verificar a necessidade de comentário:', error));
       });
     });
   }

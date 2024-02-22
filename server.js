@@ -142,6 +142,43 @@ app.get('/logout', (req, res) => {
     });
 });
 
+app.get('/status/require-note', (req, res) => {
+    const { button } = req.query;
+    const groupUser = req.session.groupUser;
+  
+    pool.query('SELECT note_status_type FROM status_buttons WHERE buttons = ? AND group_user = ?', [button, groupUser], (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Erro ao buscar informações do botão' });
+      }
+      if (results.length > 0) {
+        const requireNote = results[0].note_status_type === 1;
+        res.json({ requireNote: requireNote });
+      } else {
+        res.status(404).json({ error: 'Botão não encontrado' });
+      }
+    });
+  });
+  
+  app.post('/submit-note', (req, res) => {
+    const { username, buttons, noteText } = req.body;
+    const groupUser = req.session.groupUser;
+    const offset = -3;
+    const now = new Date();
+    now.setHours(now.getHours() + offset);
+    const noteDate = now.toISOString().slice(0, 19).replace('T', ' ');
+  
+    pool.query('INSERT INTO note_status (username, buttons, group_user, note_text, note_date) VALUES (?, ?, ?, ?, ?)', [username, buttons, groupUser, noteText, noteDate], (error) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Erro ao salvar o comentário' });
+      }
+      res.json({ message: 'Comentário salvo com sucesso' });
+    });
+  });
+  
+
+
 app.get('/status', (req, res) => {
     if (!req.session.username || !req.session.groupUser) {
         return res.status(401).json({ error: 'Não autenticado' });
