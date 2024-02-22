@@ -101,9 +101,8 @@ app.use(session({
   }));
   
 
-app.post('/login', (req, res) => {
+  app.post('/login', (req, res) => {
     const { username, password } = req.body;
-
     const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
 
     pool.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, hashedPassword], (error, results) => {
@@ -113,22 +112,26 @@ app.post('/login', (req, res) => {
         }
 
         if (results.length > 0) {
+            const user = results[0];
             const offset = -3;
             const now = new Date();
             now.setHours(now.getHours() + offset);
             const lastLoginTime = now.toISOString().replace('T', ' ').substring(0, 19);
+
             pool.query('UPDATE users SET last_login_time = ? WHERE username = ?', [lastLoginTime, username], (updateError) => {
                 if (updateError) {
                     console.error(updateError);
                 }
-                req.session.username = username;
-                res.json({ message: 'Login bem-sucedido', user: results[0], username: username });
+                req.session.username = user.username;
+                req.session.groupUser = user.group_user;
+                res.json({ message: 'Login bem-sucedido', user: user, username: user.username });
             });
         } else {
             return res.status(401).json({ error: 'Usuário ou senha incorretos' });
         }
     });
 });
+
 
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
@@ -138,6 +141,24 @@ app.get('/logout', (req, res) => {
         res.redirect('/');
     });
 });
+
+app.get('/status', (req, res) => {
+    if (!req.session.username || !req.session.groupUser) {
+        return res.status(401).json({ error: 'Não autenticado' });
+    }
+
+    const groupUser = req.session.groupUser;
+
+    pool.query('SELECT buttons FROM status_buttons WHERE group_user = ?', [groupUser], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar status' });
+        }
+        const statusButtons = results.map(row => row.buttons);
+        res.json(statusButtons);
+    });
+});
+
 
 app.post('/update_status', (req, res) => {
     console.log('Requisição recebida:', req.body);

@@ -209,58 +209,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function addButtonsToAppContainer() {
-    const statusNames = ['Online', 'Ausente', 'Invisivel'];
+  function addButtonsToAppContainer(statusNames) {
     const container = document.createElement('div');
     container.classList.add('w-40', 'rounded-md', 'shadow-lg', 'p-2', 'bg-white');
 
     statusNames.forEach(statusName => {
-      container.appendChild(createStatusButton(statusName));
+        container.appendChild(createStatusButton(statusName));
     });
 
     container.appendChild(document.createElement('div')).classList.add('border-t', 'mt-1');
-
     container.appendChild(createAlwaysOnTopButton());
 
     appContainer.appendChild(container);
-
     setupStatusButtonEvents();
     setupAlwaysOnTopButtonEvent();
-  }
+}
 
-  loginForm.addEventListener('submit', function (event) {
+loginForm.addEventListener('submit', function (event) {
     event.preventDefault();
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-
     const hashedPassword = CryptoJS.SHA256(password).toString();
 
     fetch('/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password: hashedPassword }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: hashedPassword }),
     })
-      .then(response => {
+    .then(response => {
         if (!response.ok) {
-          return response.json().then(data => {
-            throw new Error(data.error);
-          });
+            return response.json().then(data => {
+                throw new Error(data.error);
+            });
         }
         return response.json();
-      })
-      .then(data => {
-        console.log(data.message);
+    })
+    .then(data => {
         loggedInUsername = data.username;
         loginContainer.style.display = 'none';
-        addButtonsToAppContainer();
-        appContainer.style.display = 'block';
-      })
-      .catch(error => {
+        fetch('/status')
+            .then(response => response.json())
+            .then(statusButtons => {
+                addButtonsToAppContainer(statusButtons);
+                appContainer.style.display = 'block';
+            })
+            .catch(error => console.error('Erro ao buscar status:', error));
+    })
+    .catch(error => {
         console.error('Erro no login:', error);
         showDialog('Erro no login:' + error);
-      });
-  });
+    });
+});
 });
