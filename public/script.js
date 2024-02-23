@@ -101,10 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
           showDialog('Registro concluído com sucesso!');
           const registerContainer = document.getElementById('register-container');
-          if (registerContainer) {
-            appContainer.removeChild(registerContainer);
-          }
-          loginContainer.style.display = 'block';
+          appContainer.removeChild(registerContainer);
+          loginContainer.style.display = 'flex';
         })
         .catch(error => {
           console.error('Erro no registro:', error);
@@ -115,13 +113,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   registerBtn.addEventListener('click', showRegisterForm);
 
+  function showLoading() {
+    document.getElementById('loading').classList.remove('hiddens')
+    document.getElementById('loading').classList.add('loading-display');
+  }
+
+  function hideLoading() {
+    document.getElementById('loading').classList.add('hiddens');
+    document.getElementById('loading').classList.remove('loading-display')
+  }
+
   function createStatusButton(statusName) {
     const button = document.createElement('button');
     button.classList.add('status-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
     button.innerText = statusName;
     return button;
   }
-
 
   function createAlwaysOnTopButton() {
     const button = document.createElement('button');
@@ -268,9 +275,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function loadUserInterface() {
+    showLoading();
     fetch('/status')
       .then(response => response.json())
       .then(statusButtons => {
+        hideLoading();
         addButtonsToAppContainer(statusButtons);
         appContainer.style.display = 'block';
         selectionScreen.style.display = 'none';
@@ -281,6 +290,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loginForm.addEventListener('submit', function (event) {
     event.preventDefault();
+    showLoading();
+    loginContainer.style.display = 'none';
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
@@ -293,15 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .then(response => response.json())
       .then(data => {
+        hideLoading();
         loggedInUsername = data.username;
         if (data.user.admin_type === 1) {
-          loginContainer.style.display = 'none';
           selectionScreen.style.display = 'block';
         } else {
           loadUserInterface();
         }
       })
       .catch(error => {
+        hideLoading();
         console.error('Erro no login:', error);
         showDialog('Erro no login:' + error);
       });
