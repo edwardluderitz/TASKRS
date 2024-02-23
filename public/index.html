@@ -20,7 +20,16 @@
     <p id="dialog-message" class="text-sm"></p>
     <button id="close-dialog" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">OK</button>
   </div>
-  
+
+  <div id="selectionScreen" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Escolha o Modo</h2>
+      <button id="userModeBtn">Modo Usuário</button>
+      <button id="adminModeBtn">Modo Admin</button>
+    </div>
+  </div>
+
   <div id="login-container" class="flex items-center justify-center min-h-screen">
     <div class="w-full max-w-xs">
       <form id="login-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">

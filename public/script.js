@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
   const registerBtn = document.getElementById('show-register-form');
+  const selectionScreen = document.getElementById('selectionScreen');
+
 
   let startTime;
   let currentStatus = '';
@@ -18,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appContainer.style.justifyContent = 'center';
     appContainer.style.height = '100vh';
 
-  
+
     const registerContainer = document.createElement('div');
     registerContainer.id = 'register-container';
     registerContainer.className = 'flex items-center justify-center';
@@ -45,10 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </form>
       </div>
     `;
-  
+
     appContainer.appendChild(registerContainer);
-    
-    document.getElementById('back-to-login').addEventListener('click', function() {
+
+    document.getElementById('back-to-login').addEventListener('click', function () {
       appContainer.removeChild(registerContainer);
       loginContainer.style.display = 'flex';
     });
@@ -182,35 +184,35 @@ document.addEventListener('DOMContentLoaded', () => {
         this.classList.add('selected');
 
         const statusName = this.innerText;
-  fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.requireNote) {
-        const noteText = prompt("Este status requer um comentário. Por favor, insira seu comentário:");
-        if (noteText) {
-          const noteData = {
-            username: loggedInUsername,
-            buttons: statusName,
-            noteText: noteText
-          };
-          fetch('/submit-note', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(noteData),
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Erro ao submeter o comentário');
+        fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.requireNote) {
+              const noteText = prompt("Este status requer um comentário. Por favor, insira seu comentário:");
+              if (noteText) {
+                const noteData = {
+                  username: loggedInUsername,
+                  buttons: statusName,
+                  noteText: noteText
+                };
+                fetch('/submit-note', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(noteData),
+                })
+                  .then(response => {
+                    if (!response.ok) {
+                      throw new Error('Erro ao submeter o comentário');
+                    }
+                    console.log('Comentário submetido com sucesso');
+                  })
+                  .catch(error => console.error('Erro:', error));
+              }
             }
-            console.log('Comentário submetido com sucesso');
           })
-          .catch(error => console.error('Erro:', error));
-        }
-      }
-    })
-    .catch(error => console.error('Erro ao verificar a necessidade de comentário:', error));
+          .catch(error => console.error('Erro ao verificar a necessidade de comentário:', error));
       });
     });
   }
@@ -245,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.classList.add('w-40', 'rounded-md', 'shadow-lg', 'p-2', 'bg-white');
 
     statusNames.forEach(statusName => {
-        container.appendChild(createStatusButton(statusName));
+      container.appendChild(createStatusButton(statusName));
     });
 
     container.appendChild(document.createElement('div')).classList.add('border-t', 'mt-1');
@@ -254,9 +256,30 @@ document.addEventListener('DOMContentLoaded', () => {
     appContainer.appendChild(container);
     setupStatusButtonEvents();
     setupAlwaysOnTopButtonEvent();
-}
+  }
 
-loginForm.addEventListener('submit', function (event) {
+  document.getElementById('userModeBtn').addEventListener('click', function () {
+    document.getElementById('selectionScreen').style.display = 'none';
+    loadUserInterface();
+  });
+
+  document.getElementById('adminModeBtn').addEventListener('click', function () {
+    document.getElementById('selectionScreen').style.display = 'none';
+  });
+
+  function loadUserInterface() {
+    fetch('/status')
+      .then(response => response.json())
+      .then(statusButtons => {
+        addButtonsToAppContainer(statusButtons);
+        appContainer.style.display = 'block';
+        selectionScreen.style.display = 'none';
+        loginContainer.style.display = 'none';
+      })
+      .catch(error => console.error('Erro ao buscar status:', error));
+  }
+
+  loginForm.addEventListener('submit', function (event) {
     event.preventDefault();
 
     const username = document.getElementById('username').value;
@@ -264,32 +287,23 @@ loginForm.addEventListener('submit', function (event) {
     const hashedPassword = CryptoJS.SHA256(password).toString();
 
     fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: hashedPassword }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password: hashedPassword }),
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw new Error(data.error);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
+      .then(response => response.json())
+      .then(data => {
         loggedInUsername = data.username;
-        loginContainer.style.display = 'none';
-        fetch('/status')
-            .then(response => response.json())
-            .then(statusButtons => {
-                addButtonsToAppContainer(statusButtons);
-                appContainer.style.display = 'block';
-            })
-            .catch(error => console.error('Erro ao buscar status:', error));
-    })
-    .catch(error => {
+        if (data.user.admin_type === 1) {
+          loginContainer.style.display = 'none';
+          selectionScreen.style.display = 'block';
+        } else {
+          loadUserInterface();
+        }
+      })
+      .catch(error => {
         console.error('Erro no login:', error);
         showDialog('Erro no login:' + error);
-    });
-});
+      });
+  });
 });
