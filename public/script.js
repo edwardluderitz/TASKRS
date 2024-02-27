@@ -1,12 +1,61 @@
 /* SCRIPT.JS */
 
 document.addEventListener('DOMContentLoaded', () => {
+  createLoginContainer();
   const loginForm = document.getElementById('login-form');
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
   const registerBtn = document.getElementById('show-register-form');
   const selectionScreen = document.getElementById('selectionScreen');
 
+  function createLoginContainer() {
+    const loginContainer = document.createElement('div');
+    loginContainer.id = 'login-container';
+    loginContainer.className = 'flex items-center justify-center min-h-screen';
+    loginContainer.innerHTML = `
+      <div class="w-full max-w-xs">
+        <form id="login-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+          <div class="mb-4">
+            <input
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              type="text" id="username" placeholder="Usuário" required>
+          </div>
+          <div class="mb-6">
+            <input
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              type="password" id="password" placeholder="Senha" required>
+          </div>
+          <div class="flex flex-col space-y-2">
+            <button
+              class="buttons-open bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              type="submit">
+              Entrar
+            </button>
+            <a href="#" id="show-register-form"
+              class="buttons-open self-center inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+              Cadastre-se
+            </a>
+          </div>
+        </form>
+      </div>
+    `;
+  
+    document.body.appendChild(loginContainer);
+  }
+  
+  function removeLoginContainer() {
+    const loginContainer = document.getElementById('login-container');
+    if (loginContainer) {
+      loginContainer.remove();
+    }
+  }
+  
+  function removeSelectionScreen() {
+    const selectionscreencontainer = document.getElementById('selectionScreen');
+    if (selectionscreencontainer) {
+      selectionscreencontainer.remove();
+    }
+  }
 
   let startTime;
   let currentStatus = '';
@@ -51,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appContainer.appendChild(registerContainer);
 
     document.getElementById('back-to-login').addEventListener('click', function () {
+      appContainer.style.display = 'none';
       appContainer.removeChild(registerContainer);
       loginContainer.style.display = 'flex';
     });
@@ -268,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('userModeBtn').addEventListener('click', function () {
     document.getElementById('selectionScreen').style.display = 'none';
     loadUserInterface();
+    removeSelectionScreen();
   });
 
   document.getElementById('adminModeBtn').addEventListener('click', function () {
@@ -305,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.json())
       .then(data => {
         hideLoading();
+        removeLoginContainer();
         loggedInUsername = data.username;
         if (data.user.admin_type === 1) {
           selectionScreen.style.display = 'block';
