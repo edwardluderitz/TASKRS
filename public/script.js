@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
   const registerBtn = document.getElementById('show-register-form');
-  const selectionScreen = document.getElementById('selectionScreen');
 
   function createLoginContainer() {
     const loginContainer = document.createElement('div');
@@ -42,7 +41,32 @@ document.addEventListener('DOMContentLoaded', () => {
   
     document.body.appendChild(loginContainer);
   }
-  
+
+  function createSelectionScreen() {
+    const selectionScreen = document.createElement('div');
+    selectionScreen.style.display = 'block';
+    selectionScreen.id = 'selectionScreen';
+    selectionScreen.className = 'modal';
+    selectionScreen.innerHTML = `
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Escolha o Modo</h2>
+      <button id="userModeBtn">Modo Usuário</button>
+      <button id="adminModeBtn">Modo Admin</button>
+    </div>
+    `;
+
+    document.body.appendChild(selectionScreen);
+
+    document.getElementById('userModeBtn').addEventListener('click', function () {
+        loadUserInterface();
+    });
+
+    document.getElementById('adminModeBtn').addEventListener('click', function () {
+        removeSelectionScreen();
+    });
+}
+ 
   function removeLoginContainer() {
     const loginContainer = document.getElementById('login-container');
     if (loginContainer) {
@@ -51,9 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function removeSelectionScreen() {
-    const selectionscreencontainer = document.getElementById('selectionScreen');
-    if (selectionscreencontainer) {
-      selectionscreencontainer.remove();
+    const selectionScreen = document.getElementById('selectionScreen');
+    if (selectionScreen) {
+      selectionScreen.remove();
     }
   }
 
@@ -315,25 +339,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAlwaysOnTopButtonEvent();
   }
 
-  document.getElementById('userModeBtn').addEventListener('click', function () {
-    document.getElementById('selectionScreen').style.display = 'none';
-    loadUserInterface();
-    removeSelectionScreen();
-  });
-
-  document.getElementById('adminModeBtn').addEventListener('click', function () {
-    document.getElementById('selectionScreen').style.display = 'none';
-  });
-
   function loadUserInterface() {
     showLoading();
+    removeSelectionScreen();
     fetch('/status')
       .then(response => response.json())
       .then(statusButtons => {
         hideLoading();
         addButtonsToAppContainer(statusButtons);
         appContainer.style.display = 'block';
-        selectionScreen.style.display = 'none';
         loginContainer.style.display = 'none';
       })
       .catch(error => console.error('Erro ao buscar status:', error));
@@ -359,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
         removeLoginContainer();
         loggedInUsername = data.username;
         if (data.user.admin_type === 1) {
-          selectionScreen.style.display = 'block';
+          createSelectionScreen();
         } else {
           loadUserInterface();
         }
