@@ -63,10 +63,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('adminModeBtn').addEventListener('click', function () {
-        removeSelectionScreen();
+        loadAdminInterface();
     });
 }
  
+function loadAdminInterface() {
+  removeSelectionScreen();
+  appContainer.innerHTML = ''; 
+  appContainer.style.display = 'block';
+
+ 
+  const adminTitle = document.createElement('h2');
+  adminTitle.textContent = 'Painel de Administração';
+  appContainer.appendChild(adminTitle);
+
+
+  const userIndicatorButton = createAdminButton('Indicadores dos Usuários', viewUserIndicators);
+  const addUserButton = createAdminButton('Adicionar Novo Usuário', addNewUser);
+  const addGroupButton = createAdminButton('Adicionar Grupo', addGroup);
+  const resetPasswordButton = createAdminButton('Resetar Senha', resetPassword);
+
+  appContainer.appendChild(userIndicatorButton);
+  appContainer.appendChild(addUserButton);
+  appContainer.appendChild(addGroupButton);
+  appContainer.appendChild(resetPasswordButton);
+}
+function createAdminButton(buttonText, onClickFunction) {
+  const button = document.createElement('button');
+  button.textContent = buttonText;
+  button.addEventListener('click', onClickFunction);
+  return button;
+}
+function viewUserIndicators() {
+  console.log('Visualizando indicadores dos usuários');
+}
+
+function addNewUser() {
+  console.log('Adicionando um novo usuário');
+}
+
+function addGroup() {
+  console.log('Adicionando um grupo');
+}
+
+function resetPassword() {
+  console.log('Resetando senha');
+}
   function removeLoginContainer() {
     const loginContainer = document.getElementById('login-container');
     if (loginContainer) {
