@@ -80,9 +80,11 @@ app.post('/register', (req, res) => {
             return res.status(409).json({ error: 'Nome de usuário já existe' });
         }
 
-        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+        const salt = crypto.randomBytes(16).toString('hex');
 
-        pool.query('INSERT INTO users (username, group_user, admin_type, password) VALUES (?, ?, ?, ?)', [username, groupUser, adminType, hashedPassword], (error) => {
+        const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+
+        pool.query('INSERT INTO users (username, group_user, admin_type, password, salt) VALUES (?, ?, ?, ?, ?)', [username, 'Suporte', 1, hashedPassword, salt], (error) => {
             if (error) {
                 console.error(error);
                 return res.status(500).json({ error: 'Erro ao salvar o usuário' });
@@ -103,16 +105,23 @@ app.use(session({
 
   app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
 
-    pool.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, hashedPassword], (error, results) => {
+    pool.query('SELECT * FROM users WHERE username = ?', [username], (error, results) => {
         if (error) {
             console.error(error);
             return res.status(500).json({ error: 'Erro interno do servidor' });
         }
 
-        if (results.length > 0) {
-            const user = results[0];
+        if (results.length === 0) {
+            return res.status(401).json({ error: 'Usuário ou senha incorretos' });
+        }
+
+        const user = results[0];
+        const { password: storedHash, salt } = user;
+
+        const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+
+        if (hash === storedHash) {
             const offset = -3;
             const now = new Date();
             now.setHours(now.getHours() + offset);
