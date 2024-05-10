@@ -184,19 +184,9 @@ function resetPassword() {
         return;
       }
 
-      let hashedPassword;
-      if (window.crypto && window.crypto.subtle) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hash = await window.crypto.subtle.digest('SHA-256', data);
-        hashedPassword = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-      } else {
-        hashedPassword = CryptoJS.SHA256(password).toString();
-      }
-
       const userData = {
         username: username,
-        password: hashedPassword,
+        password: password,
       };
 
       fetch('/register', {
@@ -402,12 +392,11 @@ function resetPassword() {
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const hashedPassword = CryptoJS.SHA256(password).toString();
 
     fetch('/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password: hashedPassword }),
+      body: JSON.stringify({ username, password}),
     })
       .then(response => response.json())
       .then(data => {
