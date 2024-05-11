@@ -401,6 +401,11 @@ function resetPassword() {
       .then(response => response.json())
       .then(data => {
         hideLoading();
+        if (!data.user) {
+          showDialog('Erro no login: ' + (data.error || 'Usuário ou senha incorretos'));
+          loginContainer.style.display = 'flex';
+          return;
+        }
         removeLoginContainer();
         loggedInUsername = data.username;
         if (data.user.admin_type === 1) {
@@ -412,7 +417,8 @@ function resetPassword() {
       .catch(error => {
         hideLoading();
         console.error('Erro no login:', error);
-        showDialog('Erro no login:' + error);
+        showDialog('Erro no login: ' + error);
       });
   });
+
 });
