@@ -6,6 +6,11 @@ const path = require('path');
 
 let mainWindow;
 
+//*************************************************************************************************************//
+//     Título: Criação da Janela do Aplicativo
+//     Descrição: Configura e cria uma nova janela do navegador utilizando o Electron, definindo preferências de 
+//                segurança e carregamento de conteúdo inicial antes de carregar a URL principal.
+//*************************************************************************************************************//
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 240,
@@ -64,10 +69,21 @@ function createWindow() {
     mainWindow.setMenu(null);
 }
 
+//*************************************************************************************************************//
+//     Título: Configuração do IPC para Alternância de Janela Sempre no Topo
+//     Descrição: Configura o IPC Main para ouvir eventos de alternância, permitindo ajustar a janela do 
+//                aplicativo para permanecer sempre no topo conforme solicitado pelo processo de renderização.
+//*************************************************************************************************************//
 ipcMain.on('toggle-always-on-top', (event, shouldSetAlwaysOnTop) => {
     mainWindow.setAlwaysOnTop(shouldSetAlwaysOnTop);
   });
 
+
+//*************************************************************************************************************//
+//     Título: Inicialização e Gerenciamento do Ciclo de Vida do Aplicativo
+//     Descrição: Configura os manipuladores de eventos para o ciclo de vida do aplicativo, incluindo o carregamento
+//                inicial da janela, tratamento do fechamento de todas as janelas e reativação do aplicativo.
+//*************************************************************************************************************//
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

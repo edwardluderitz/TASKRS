@@ -1,5 +1,10 @@
 /* SERVER.JS */
 
+//*************************************************************************************************************//
+//     Título: Configuração Inicial do Servidor
+//     Descrição: Inicializa o servidor Express, configura o pool de conexões MySQL, e define middleware 
+//                essencial como o suporte para JSON e sessões.
+//*************************************************************************************************************//
 const express = require('express');
 const mysql = require('mysql');
 const app = express();
@@ -18,8 +23,21 @@ const dbConfig = {
     database: process.env.DB_NAME
 };
 
+//*************************************************************************************************************//
+//     Título: Iniciar o Servidor
+//     Descrição: Inicia o servidor na porta especificada nas variáveis de ambiente, logando a ativação para 
+//                confirmação de que o servidor está operacional.
+//*************************************************************************************************************//
 const port = process.env.PORT
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
+});
 
+//*************************************************************************************************************//
+//     Título: Roteamento de Script Obfuscado
+//     Descrição: Intercepta requisições para script.js, lê o arquivo original, obfusca-o usando 
+//                JavaScriptObfuscator para melhorar a segurança e envia o código obfuscado como resposta.
+//*************************************************************************************************************//
 app.get('/script.js', (req, res) => {
     fs.readFile(path.join(__dirname, 'public', 'script.js'), 'utf8', (err, data) => {
         if (err) {
@@ -44,6 +62,11 @@ app.get('/script.js', (req, res) => {
     });
 });
 
+//*************************************************************************************************************//
+//     Título: Configuração de Middleware
+//     Descrição: Configura o middleware para analisar JSON e servir arquivos estáticos, especificando o tipo de 
+//                conteúdo para arquivos JavaScript para correta interpretação pelo navegador.
+//*************************************************************************************************************//
 
 app.use(express.json());
 app.use(express.static('public', {
@@ -53,7 +76,11 @@ app.use(express.static('public', {
         }
     }
 }));
-
+//*************************************************************************************************************//
+//     Título: Configuração de Pool de Conexão MySQL
+//     Descrição: Configura um pool de conexões MySQL para gerenciar múltiplas conexões de forma eficiente, usando
+//                variáveis de ambiente para segurança das credenciais de conexão.
+//*************************************************************************************************************//
 const pool = mysql.createPool({
     connectionLimit: 10,
     host: process.env.DB_HOST,
@@ -64,7 +91,11 @@ const pool = mysql.createPool({
 
 console.log(pool._allConnections.length);
 
-
+//*************************************************************************************************************//
+//     Título: Roteamento de Registro de Usuário
+//     Descrição: Manipula pedidos de registro, verificando a existência do usuário, criptografando a senha e
+//                inserindo o novo usuário no banco de dados.
+//*************************************************************************************************************//
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     const groupUser = 'Suporte';
@@ -94,16 +125,24 @@ app.post('/register', (req, res) => {
     });
 });
 
-
+//*************************************************************************************************************//
+//     Título: Configuração de Sessões Express
+//     Descrição: Configura sessões para gerenciar o estado de login dos usuários, usando segurança adicional com
+//                variáveis de ambiente para o segredo da sessão.
+//*************************************************************************************************************//
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false }
-  }));
-  
+}));
 
-  app.post('/login', (req, res) => {
+//*************************************************************************************************************//
+//     Título: Roteamento de Login
+//     Descrição: Verifica credenciais do usuário, compara a senha com a hash armazenada no banco de dados e 
+//                inicia uma sessão em caso de sucesso.
+//*************************************************************************************************************//
+app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
     pool.query('SELECT * FROM users WHERE username = ?', [username], (error, results) => {
@@ -141,7 +180,10 @@ app.use(session({
     });
 });
 
-
+//*************************************************************************************************************//
+//     Título: Roteamento de Logout
+//     Descrição: Encerra a sessão do usuário e redireciona para a página inicial.
+//*************************************************************************************************************//
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -151,43 +193,56 @@ app.get('/logout', (req, res) => {
     });
 });
 
+//*************************************************************************************************************//
+//     Título: Verificar Necessidade de Nota para Status
+//     Descrição: Checa se um determinado botão de status requer uma nota adicional com base no usuário e no
+//                grupo. 
+//*************************************************************************************************************//
 app.get('/status/require-note', (req, res) => {
     const { button } = req.query;
     const groupUser = req.session.groupUser;
-  
+
     pool.query('SELECT note_status_type FROM status_buttons WHERE buttons = ? AND group_user = ?', [button, groupUser], (error, results) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Erro ao buscar informações do botão' });
-      }
-      if (results.length > 0) {
-        const requireNote = results[0].note_status_type === 1;
-        res.json({ requireNote: requireNote });
-      } else {
-        res.status(404).json({ error: 'Botão não encontrado' });
-      }
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar informações do botão' });
+        }
+        if (results.length > 0) {
+            const requireNote = results[0].note_status_type === 1;
+            res.json({ requireNote: requireNote });
+        } else {
+            res.status(404).json({ error: 'Botão não encontrado' });
+        }
     });
-  });
-  
-  app.post('/submit-note', (req, res) => {
+});
+
+//*************************************************************************************************************//
+//     Título: Submeter Nota de Status
+//     Descrição: Recebe e salva uma nota associada a um status específico do usuário, garantindo a documentação
+//                completa de atividades críticas ou observações importantes.
+//*************************************************************************************************************//
+app.post('/submit-note', (req, res) => {
     const { username, buttons, noteText } = req.body;
     const groupUser = req.session.groupUser;
     const offset = -3;
     const now = new Date();
     now.setHours(now.getHours() + offset);
     const noteDate = now.toISOString().slice(0, 19).replace('T', ' ');
-  
+
     pool.query('INSERT INTO note_status (username, buttons, group_user, note_text, note_date) VALUES (?, ?, ?, ?, ?)', [username, buttons, groupUser, noteText, noteDate], (error) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Erro ao salvar o comentário' });
-      }
-      res.json({ message: 'Comentário salvo com sucesso' });
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao salvar o comentário' });
+        }
+        res.json({ message: 'Comentário salvo com sucesso' });
     });
-  });
-  
+});
 
-
+//*************************************************************************************************************//
+//     Título: Buscar Botões de Status
+//     Descrição: Busca e retorna os botões de status disponíveis para o usuário logado, baseando-se no grupo do 
+//                usuário, para garantir que os controles de interface correspondam às permissões do usuário.
+//*************************************************************************************************************//
 app.get('/status', (req, res) => {
     if (!req.session.username || !req.session.groupUser) {
         return res.status(401).json({ error: 'Não autenticado' });
@@ -205,7 +260,11 @@ app.get('/status', (req, res) => {
     });
 });
 
-
+//*************************************************************************************************************//
+//     Título: Atualizar Status do Usuário
+//     Descrição: Atualiza o status do usuário no banco de dados, permitindo rastrear e documentar as atividades 
+//                do usuário ao longo do tempo.
+//*************************************************************************************************************//
 app.post('/update_status', (req, res) => {
     console.log('Requisição recebida:', req.body);
 
@@ -214,7 +273,7 @@ app.post('/update_status', (req, res) => {
     }
 
     const username = req.session.username;
-    const {status, duration} = req.body;
+    const { status, duration } = req.body;
     const date = new Date().toISOString().split('T')[0];
 
     pool.query('SELECT status FROM status_user WHERE username = ? AND date = ?', [username, date], (selectError, results) => {
@@ -258,8 +317,4 @@ app.post('/update_status', (req, res) => {
             });
         }
     });
-});
-
-app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
 });

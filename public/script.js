@@ -2,11 +2,20 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   createLoginContainer();
+  let startTime;
+  let currentStatus = '';
+  let loggedInUsername = '';
+
   const loginForm = document.getElementById('login-form');
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
   const registerBtn = document.getElementById('show-register-form');
-
+  
+  //*************************************************************************************************************//
+  //     Título: Criar Contêiner de Login
+  //     Descrição: Cria o contêiner de login e o formulário associado dinamicamente no carregamento da página. 
+  //                Esta função garante que o usuário possa inserir suas credenciais para autenticação.
+  //*************************************************************************************************************//
   function createLoginContainer() {
     const loginContainer = document.createElement('div');
     loginContainer.id = 'login-container';
@@ -38,95 +47,67 @@ document.addEventListener('DOMContentLoaded', () => {
         </form>
       </div>
     `;
-  
     document.body.appendChild(loginContainer);
   }
 
-  function createSelectionScreen() {
-    const selectionScreen = document.createElement('div');
-    selectionScreen.style.display = 'block';
-    selectionScreen.id = 'selectionScreen';
-    selectionScreen.className = 'modal';
-    selectionScreen.innerHTML = `
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2>Escolha o Modo</h2>
-      <button id="userModeBtn">Modo Usuário</button>
-      <button id="adminModeBtn">Modo Admin</button>
-    </div>
-    `;
-
-    document.body.appendChild(selectionScreen);
-
-    document.getElementById('userModeBtn').addEventListener('click', function () {
-        loadUserInterface();
-    });
-
-    document.getElementById('adminModeBtn').addEventListener('click', function () {
-        loadAdminInterface();
-    });
-}
- 
-function loadAdminInterface() {
-  removeSelectionScreen();
-  appContainer.innerHTML = ''; 
-  appContainer.style.display = 'block';
-
- 
-  const adminTitle = document.createElement('h2');
-  adminTitle.textContent = 'Painel de Administração';
-  appContainer.appendChild(adminTitle);
-
-
-  const userIndicatorButton = createAdminButton('Indicadores dos Usuários', viewUserIndicators);
-  const addUserButton = createAdminButton('Adicionar Novo Usuário', addNewUser);
-  const addGroupButton = createAdminButton('Adicionar Grupo', addGroup);
-  const resetPasswordButton = createAdminButton('Resetar Senha', resetPassword);
-
-  appContainer.appendChild(userIndicatorButton);
-  appContainer.appendChild(addUserButton);
-  appContainer.appendChild(addGroupButton);
-  appContainer.appendChild(resetPasswordButton);
-}
-function createAdminButton(buttonText, onClickFunction) {
-  const button = document.createElement('button');
-  button.textContent = buttonText;
-  button.addEventListener('click', onClickFunction);
-  return button;
-}
-function viewUserIndicators() {
-  console.log('Visualizando indicadores dos usuários');
-}
-
-function addNewUser() {
-  console.log('Adicionando um novo usuário');
-}
-
-function addGroup() {
-  console.log('Adicionando um grupo');
-}
-
-function resetPassword() {
-  console.log('Resetando senha');
-}
+  //*************************************************************************************************************//
+  //     Título: Remover Contêiner de Login
+  //     Descrição: Remove o contêiner de login do DOM, utilizado após o login bem-sucedido ou para transição para
+  //                a tela de registro.
+  //*************************************************************************************************************//
   function removeLoginContainer() {
     const loginContainer = document.getElementById('login-container');
     if (loginContainer) {
       loginContainer.remove();
     }
   }
-  
-  function removeSelectionScreen() {
-    const selectionScreen = document.getElementById('selectionScreen');
-    if (selectionScreen) {
-      selectionScreen.remove();
-    }
-  }
 
-  let startTime;
-  let currentStatus = '';
-  let loggedInUsername = '';
+  //*************************************************************************************************************//
+  //     Título: Tratar Submissão de Login
+  //     Descrição: Manipula a submissão do formulário de login, enviando os dados do usuário para o servidor e 
+  //                processando a resposta para redirecionar ou mostrar erros.
+  //*************************************************************************************************************//
+  loginForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    showLoading();
+    loginContainer.style.display = 'none';
 
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        hideLoading();
+        if (!data.user) {
+          showDialog('Erro no login: ' + (data.error || 'Usuário ou senha incorretos'));
+          loginContainer.style.display = 'flex';
+          return;
+        }
+        removeLoginContainer();
+        loggedInUsername = data.username;
+        if (data.user.admin_type === 1) {
+          createSelectionScreen();
+        } else {
+          loadUserInterface();
+        }
+      })
+      .catch(error => {
+        hideLoading();
+        console.error('Erro no login:', error);
+        showDialog('Erro no login: ' + error);
+      });
+  });
+
+  //*************************************************************************************************************//
+  //     Título: Mostrar Formulário de Registro
+  //     Descrição: Exibe o formulário de registro para novos usuários, escondendo o formulário de login e 
+  //                preparando o ambiente para a entrada de novos dados de usuário.
+  //*************************************************************************************************************//
   function showRegisterForm() {
     loginContainer.style.display = 'none';
     appContainer.style.display = 'flex';
@@ -134,7 +115,6 @@ function resetPassword() {
     appContainer.style.alignItems = 'center';
     appContainer.style.justifyContent = 'center';
     appContainer.style.height = '100vh';
-
 
     const registerContainer = document.createElement('div');
     registerContainer.id = 'register-container';
@@ -219,6 +199,127 @@ function resetPassword() {
   }
   registerBtn.addEventListener('click', showRegisterForm);
 
+  //*************************************************************************************************************//
+  //     Título: Criar Tela de Seleção de Modo
+  //     Descrição: Cria uma tela de seleção onde o usuário pode escolher entre Modo Usuário e Modo Administrador.
+  //                Esta tela permite transições adequadas entre diferentes interfaces baseadas no tipo de usuário.
+  //*************************************************************************************************************//
+  function createSelectionScreen() {
+    const selectionScreen = document.createElement('div');
+    selectionScreen.style.display = 'block';
+    selectionScreen.id = 'selectionScreen';
+    selectionScreen.className = 'modal';
+    selectionScreen.innerHTML = `
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Escolha o Modo</h2>
+      <button id="userModeBtn">Modo Usuário</button>
+      <button id="adminModeBtn">Modo Admin</button>
+    </div>
+    `;
+
+    document.body.appendChild(selectionScreen);
+
+    document.getElementById('userModeBtn').addEventListener('click', function () {
+      loadUserInterface();
+    });
+
+    document.getElementById('adminModeBtn').addEventListener('click', function () {
+      loadAdminInterface();
+    });
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Remover Tela de Seleção de Modo
+  //     Descrição: Remove a tela de seleção de modo do DOM para limpar a interface e preparar para carregar a 
+  //                interface específica do usuário ou do administrador.
+  //*************************************************************************************************************//
+  function removeSelectionScreen() {
+    const selectionScreen = document.getElementById('selectionScreen');
+    if (selectionScreen) {
+      selectionScreen.remove();
+    }
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Carregar Interface de Administração
+  //     Descrição: Prepara e exibe a interface do administrador, que inclui funcionalidades específicas como 
+  //                visualização de indicadores, adição de usuários, grupos e funcionalidades de reset de senha.
+  //*************************************************************************************************************//
+  function loadAdminInterface() {
+    removeSelectionScreen();
+    appContainer.innerHTML = '';
+    appContainer.style.display = 'block';
+
+
+    const adminTitle = document.createElement('h2');
+    adminTitle.textContent = 'Painel de Administração';
+    appContainer.appendChild(adminTitle);
+
+
+    const userIndicatorButton = createAdminButton('Indicadores dos Usuários', viewUserIndicators);
+    const addUserButton = createAdminButton('Adicionar Novo Usuário', addNewUser);
+    const addGroupButton = createAdminButton('Adicionar Grupo', addGroup);
+    const resetPasswordButton = createAdminButton('Resetar Senha', resetPassword);
+
+    appContainer.appendChild(userIndicatorButton);
+    appContainer.appendChild(addUserButton);
+    appContainer.appendChild(addGroupButton);
+    appContainer.appendChild(resetPasswordButton);
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Criar Botão de Administração
+  //     Descrição: Cria botões dinamicamente para a interface do administrador, associando funções específicas a 
+  //                cada botão para permitir a execução de tarefas administrativas.
+  //*************************************************************************************************************//
+  function createAdminButton(buttonText, onClickFunction) {
+    const button = document.createElement('button');
+    button.textContent = buttonText;
+    button.addEventListener('click', onClickFunction);
+    return button;
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Visualizar Indicadores dos Usuários
+  //     Descrição: Função para logar a ação de visualizar indicadores dos usuários, parte das ferramentas 
+  //                administrativas para monitoramento e gestão de usuário.
+  //*************************************************************************************************************//
+  function viewUserIndicators() {
+    console.log('Visualizando indicadores dos usuários');
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Adicionar Novo Usuário
+  //     Descrição: Permite ao administrador adicionar um novo usuário ao sistema, uma parte crítica das 
+  //                funcionalidades de gestão de usuários.
+  //*************************************************************************************************************//
+  function addNewUser() {
+    console.log('Adicionando um novo usuário');
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Adicionar Grupo
+  //     Descrição: Fornece funcionalidade para criar novos grupos de usuários, facilitando a organização e 
+  //                gerenciamento por parte dos administradores.
+  //*************************************************************************************************************//
+  function addGroup() {
+    console.log('Adicionando um grupo');
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Resetar Senha
+  //     Descrição: Oferece ao administrador a capacidade de resetar senhas de usuários, um elemento essencial para 
+  //                a manutenção da segurança e assistência ao usuário.
+  //*************************************************************************************************************//
+  function resetPassword() {
+    console.log('Resetando senha');
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Animação de Carregamento
+  //     Descrição: Essas funções habilitam e desabilitam a animação de carregamento no centro da página.
+  //*************************************************************************************************************//
   function showLoading() {
     document.getElementById('loading').classList.remove('hiddens')
     document.getElementById('loading').classList.add('loading-display');
@@ -229,6 +330,30 @@ function resetPassword() {
     document.getElementById('loading').classList.remove('loading-display')
   }
 
+  //*************************************************************************************************************//
+  //     Título: Carregar a Interface Principal do Usuário
+  //     Descrição: Faz a busca no banco de dados dos status de trabalho deste usuário usando o usuário logado para
+  //                posteriormente realizar o carregamento na página dos botões.
+  //*************************************************************************************************************//
+  function loadUserInterface() {
+    showLoading();
+    removeSelectionScreen();
+    fetch('/status')
+      .then(response => response.json())
+      .then(statusButtons => {
+        hideLoading();
+        addButtonsToAppContainer(statusButtons);
+        appContainer.style.display = 'block';
+        loginContainer.style.display = 'none';
+      })
+      .catch(error => console.error('Erro ao buscar status:', error));
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Criar Botão de Status
+  //     Descrição: Cria dinamicamente um botão para cada status de trabalho fornecido pelo servidor, configurando
+  //                a classe CSS adequada e o texto.
+  //*************************************************************************************************************//
   function createStatusButton(statusName) {
     const button = document.createElement('button');
     button.classList.add('status-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
@@ -236,13 +361,12 @@ function resetPassword() {
     return button;
   }
 
-  function createAlwaysOnTopButton() {
-    const button = document.createElement('button');
-    button.classList.add('always-on-top-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
-    button.innerText = 'Always on top';
-    return button;
-  }
-
+  //*************************************************************************************************************//
+  //     Título: Configurar Eventos dos Botões de Status
+  //     Descrição: Adiciona eventos aos botões de status para gerenciar a seleção e atualização de status, 
+  //                incluindo o cálculo da duração e a interação com a API do servidor para atualização do status 
+  //                e submissão de comentários quando necessário.
+  //*************************************************************************************************************//
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
 
@@ -330,31 +454,11 @@ function resetPassword() {
     });
   }
 
-
-  function showDialog(message) {
-    const dialog = document.getElementById('custom-dialog');
-    const messageElement = document.getElementById('dialog-message');
-    messageElement.textContent = message;
-    dialog.classList.remove('hiddens');
-  }
-
-
-  function closeDialog() {
-    const dialog = document.getElementById('custom-dialog');
-    dialog.classList.add('hiddens');
-  }
-
-  document.getElementById('close-dialog').addEventListener('click', closeDialog);
-
-
-  function setupAlwaysOnTopButtonEvent() {
-    const alwaysOnTopButton = document.querySelector('.always-on-top-btn');
-    alwaysOnTopButton.addEventListener('click', function () {
-      const shouldSetAlwaysOnTop = this.classList.toggle('toggle-on');
-      window.electron.ipcRenderer.send('toggle-always-on-top', shouldSetAlwaysOnTop);
-    });
-  }
-
+  //*************************************************************************************************************//
+  //     Título: Adicionar Botões ao Contêiner da Aplicação
+  //     Descrição: Adiciona os botões de status ao contêiner da aplicação, configurando a visibilidade e a 
+  //                interatividade dos botões dentro do contexto da interface do usuário.
+  //*************************************************************************************************************//
   function addButtonsToAppContainer(statusNames) {
     const container = document.createElement('div');
     container.classList.add('w-40', 'rounded-md', 'shadow-lg', 'p-2', 'bg-white');
@@ -371,54 +475,40 @@ function resetPassword() {
     setupAlwaysOnTopButtonEvent();
   }
 
-  function loadUserInterface() {
-    showLoading();
-    removeSelectionScreen();
-    fetch('/status')
-      .then(response => response.json())
-      .then(statusButtons => {
-        hideLoading();
-        addButtonsToAppContainer(statusButtons);
-        appContainer.style.display = 'block';
-        loginContainer.style.display = 'none';
-      })
-      .catch(error => console.error('Erro ao buscar status:', error));
+  //*************************************************************************************************************//
+  //     Título: Botão Sempre no Topo
+  //     Descrição: Esse botão serve para que mantenha a aplicação acima de qualquer coisa quando clicado.
+  //*************************************************************************************************************//
+  function createAlwaysOnTopButton() {
+    const button = document.createElement('button');
+    button.classList.add('always-on-top-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
+    button.innerText = 'Always on top';
+    return button;
   }
 
-  loginForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-    showLoading();
-    loginContainer.style.display = 'none';
+  function setupAlwaysOnTopButtonEvent() {
+    const alwaysOnTopButton = document.querySelector('.always-on-top-btn');
+    alwaysOnTopButton.addEventListener('click', function () {
+      const shouldSetAlwaysOnTop = this.classList.toggle('toggle-on');
+      window.electron.ipcRenderer.send('toggle-always-on-top', shouldSetAlwaysOnTop);
+    });
+  }
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+  //*************************************************************************************************************//
+  //     Título: Habilitar e desabilitar caixas de diálogo 
+  //     Descrição: Habilitar a caixa de Diálogo no HTML para aparecer com a mensagem designada
+  //     nas instruções das funções.
+  //*************************************************************************************************************//
+  function showDialog(message) {
+    const dialog = document.getElementById('custom-dialog');
+    const messageElement = document.getElementById('dialog-message');
+    messageElement.textContent = message;
+    dialog.classList.remove('hiddens');
+  }
 
-    fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password}),
-    })
-      .then(response => response.json())
-      .then(data => {
-        hideLoading();
-        if (!data.user) {
-          showDialog('Erro no login: ' + (data.error || 'Usuário ou senha incorretos'));
-          loginContainer.style.display = 'flex';
-          return;
-        }
-        removeLoginContainer();
-        loggedInUsername = data.username;
-        if (data.user.admin_type === 1) {
-          createSelectionScreen();
-        } else {
-          loadUserInterface();
-        }
-      })
-      .catch(error => {
-        hideLoading();
-        console.error('Erro no login:', error);
-        showDialog('Erro no login: ' + error);
-      });
-  });
-
+  function closeDialog() {
+    const dialog = document.getElementById('custom-dialog');
+    dialog.classList.add('hiddens');
+  }
+  document.getElementById('close-dialog').addEventListener('click', closeDialog);
 });
