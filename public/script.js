@@ -146,8 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
     appContainer.appendChild(registerContainer);
 
     document.getElementById('back-to-login').addEventListener('click', function () {
+      appContainer.removeChild(registerContainer); 
+      appContainer.innerHTML = '';
+      appContainer.style.cssText = '';
       appContainer.style.display = 'none';
-      appContainer.removeChild(registerContainer);
       loginContainer.style.display = 'flex';
     });
 
@@ -189,6 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const registerContainer = document.getElementById('register-container');
           appContainer.removeChild(registerContainer);
           loginContainer.style.display = 'flex';
+          appContainer.innerHTML = '';
+          appContainer.style.cssText = '';
+          appContainer.style.display = 'none';
         })
         .catch(error => {
           console.error('Erro no registro:', error);
