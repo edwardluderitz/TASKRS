@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
   const registerBtn = document.getElementById('show-register-form');
-  
+
   //*************************************************************************************************************//
   //     Título: Criar Contêiner de Login
   //     Descrição: Cria o contêiner de login e o formulário associado dinamicamente no carregamento da página. 
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appContainer.appendChild(registerContainer);
 
     document.getElementById('back-to-login').addEventListener('click', function () {
-      appContainer.removeChild(registerContainer); 
+      appContainer.removeChild(registerContainer);
       appContainer.innerHTML = '';
       appContainer.style.cssText = '';
       appContainer.style.display = 'none';
@@ -326,12 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Descrição: Essas funções habilitam e desabilitam a animação de carregamento no centro da página.
   //*************************************************************************************************************//
   function showLoading() {
-    document.getElementById('loading').classList.remove('hiddens')
+    document.getElementById('loading').classList.remove('hidden')
     document.getElementById('loading').classList.add('loading-display');
   }
 
   function hideLoading() {
-    document.getElementById('loading').classList.add('hiddens');
+    document.getElementById('loading').classList.add('hidden');
     document.getElementById('loading').classList.remove('loading-display')
   }
 
@@ -343,6 +343,37 @@ document.addEventListener('DOMContentLoaded', () => {
   function loadUserInterface() {
     showLoading();
     removeSelectionScreen();
+
+    const navbar = document.createElement('div');
+    navbar.innerHTML = `
+    <div class="bg-gray-800 text-white p-4">
+      <div class="container mx-auto flex justify-between items-center">
+        <div class="dropdown">
+          <button id="dropdownMenuButton" class="dropdown-button">☰</button>
+          <div id="dropdownMenu" class="dropdown-menu hidden">
+            <a href="#" id="logout" class="dropdown-item">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+    appContainer.appendChild(navbar);
+
+    const dropdownButton = document.getElementById('dropdownMenuButton');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    dropdownButton.addEventListener('click', () => {
+      dropdownMenu.classList.toggle('hidden');
+    });
+
+    window.addEventListener('click', function (e) {
+      if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+        dropdownMenu.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('logout').addEventListener('click', () => {
+      alert('Logout realizado com sucesso!');
+    });
     fetch('/status')
       .then(response => response.json())
       .then(statusButtons => {
@@ -508,12 +539,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const dialog = document.getElementById('custom-dialog');
     const messageElement = document.getElementById('dialog-message');
     messageElement.textContent = message;
-    dialog.classList.remove('hiddens');
+    dialog.classList.remove('hidden');
   }
 
   function closeDialog() {
     const dialog = document.getElementById('custom-dialog');
-    dialog.classList.add('hiddens');
+    dialog.classList.add('hidden');
   }
   document.getElementById('close-dialog').addEventListener('click', closeDialog);
 });
