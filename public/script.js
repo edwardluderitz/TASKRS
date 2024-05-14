@@ -369,8 +369,18 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
     </div>
-`;
+  `;
     appContainer.appendChild(navbar);
+
+    const mainSection = document.createElement('section');
+    mainSection.id = 'main-section';
+    mainSection.className = 'main-section';
+    appContainer.appendChild(mainSection);
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.id = 'button-container';
+    buttonContainer.className = 'button-container';
+    mainSection.appendChild(buttonContainer);
 
     const dropdownButton = document.getElementById('dropdownMenuButton');
     const dropdownMenu = document.getElementById('dropdownMenu');
@@ -414,11 +424,26 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.json())
       .then(statusButtons => {
         hideLoading();
-        addButtonsToAppContainer(statusButtons);
+        addButtonsToButtonContainer(statusButtons);
         appContainer.style.display = 'block';
         loginContainer.style.display = 'none';
       })
       .catch(error => console.error('Erro ao buscar status:', error));
+  }
+
+  function addButtonsToButtonContainer(statusNames) {
+    const container = document.getElementById('button-container');
+    container.innerHTML = '';
+
+    statusNames.forEach(statusName => {
+      container.appendChild(createStatusButton(statusName));
+    });
+
+    container.appendChild(document.createElement('div')).classList.add('border-t', 'mt-1');
+    container.appendChild(createAlwaysOnTopButton());
+
+    setupStatusButtonEvents();
+    setupAlwaysOnTopButtonEvent();
   }
 
   //*************************************************************************************************************//
@@ -428,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //*************************************************************************************************************//
   function createStatusButton(statusName) {
     const button = document.createElement('button');
-    button.classList.add('status-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
+    button.classList.add('status-btn', 'w-full', 'text-center', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
     button.innerText = statusName;
     return button;
   }
@@ -445,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
     statusButtons.forEach(button => {
       button.addEventListener('click', function () {
         if (this.classList.contains('selected')) {
-          console.log('Este status já está selecionado.');
           return;
         }
 
@@ -553,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //*************************************************************************************************************//
   function createAlwaysOnTopButton() {
     const button = document.createElement('button');
-    button.classList.add('always-on-top-btn', 'w-full', 'text-left', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
+    button.classList.add('always-on-top-btn', 'w-full', 'text-center', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
     button.innerText = 'Always on top';
     return button;
   }

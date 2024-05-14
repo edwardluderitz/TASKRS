@@ -34,36 +34,67 @@
   display: none;
 }
 
-.login-container, .register-container {
+.login-container,
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
 }
 
-input[type="text"], input[type="password"], .buttons-open {
+input[type="text"],
+input[type="password"],
+.buttons-open {
   width: 100%;
   padding: 0.5rem;
-  margin-bottom: 0.5rem; 
+  margin-bottom: 0.5rem;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
   border-radius: 0.375rem;
   border: 1px solid #ddd;
 }
 
 .buttons-open {
-  
+
   padding: 0.5rem;
-  font-size: 0.875rem; 
+  font-size: 0.875rem;
 }
 
 
-#show-register-form, #back-to-login {
+#show-register-form,
+#back-to-login {
   font-size: 0.8rem;
 }
 
 button:hover {
   background-color: #357abd;
 }
+
+.main-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 1rem 0;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.button-container .status-btn,
+.button-container .always-on-top-btn {
+  width: 200px;
+  margin: 0.5rem 0;
+}
+
 
 #show-register-form {
   background: none;
@@ -75,27 +106,31 @@ button:hover {
 }
 
 #show-register-form:hover {
-  color: #357abd; 
+  color: #357abd;
 }
 
-#login-form, #register-form {
+#login-form,
+#register-form {
   max-width: 400px;
   margin: auto;
 }
 
 .flex.flex-col.space-y-2 button,
 .flex.flex-col.space-y-2 a {
-  width: auto; 
-  margin: 0 auto; 
+  width: auto;
+  margin: 0 auto;
 }
 
 
 @media (max-width: 240px) {
-  .login-container, #register-container {
-    padding: 0.5rem; 
+
+  .login-container,
+  #register-container {
+    padding: 0.5rem;
   }
 
-  input[type="text"], input[type="password"] {
+  input[type="text"],
+  input[type="password"] {
     font-size: 0.75rem;
   }
 
@@ -107,19 +142,19 @@ button:hover {
 .modal {
   display: none;
   position: fixed;
-  z-index: 1; 
+  z-index: 1;
   left: 0;
   top: 0;
-  width: 100%; 
-  height: 100%; 
-  overflow: auto; 
-  background-color: rgb(0,0,0); 
-  background-color: rgba(0,0,0,0.4);
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0, 0, 0);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto; 
+  margin: 15% auto;
   padding: 20px;
   border: 1px solid #888;
   width: 80%;
@@ -164,7 +199,7 @@ button:hover {
   position: absolute;
   background-color: #f9f9f9;
   min-width: 160px;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
   z-index: 100;
   border-radius: 4px;
 }
@@ -194,6 +229,7 @@ button:hover {
   border-radius: var(--border-radius);
   transition: background-color var(--transition-speed);
 }
+
 .dropdown-button:hover {
   background-color: #555;
 }

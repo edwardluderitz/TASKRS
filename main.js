@@ -13,11 +13,11 @@ let mainWindow;
 //*************************************************************************************************************//
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 240,
-        height: 300,
-        minWidth: 240, 
-        minHeight: 300, 
-        resizable: true, 
+        width: 300,
+        height: 500,
+        minWidth: 300,
+        minHeight: 500,
+        resizable: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
@@ -63,7 +63,7 @@ function createWindow() {
         setTimeout(() => {
             mainWindow.loadURL('http://localhost:3000');
         }, 500);
-            
+
     });
 
     mainWindow.setMenu(null);
@@ -76,7 +76,7 @@ function createWindow() {
 //*************************************************************************************************************//
 ipcMain.on('toggle-always-on-top', (event, shouldSetAlwaysOnTop) => {
     mainWindow.setAlwaysOnTop(shouldSetAlwaysOnTop);
-  });
+});
 
 
 //*************************************************************************************************************//
