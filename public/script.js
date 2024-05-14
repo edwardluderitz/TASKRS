@@ -6,10 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentStatus = '';
   let loggedInUsername = '';
 
-  const loginForm = document.getElementById('login-form');
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
-  const registerBtn = document.getElementById('show-register-form');
 
   //*************************************************************************************************************//
   //     Título: Criar Contêiner de Login
@@ -21,33 +19,45 @@ document.addEventListener('DOMContentLoaded', () => {
     loginContainer.id = 'login-container';
     loginContainer.className = 'flex items-center justify-center min-h-screen';
     loginContainer.innerHTML = `
-      <div class="w-full max-w-xs">
-        <form id="login-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <div class="mb-4">
-            <input
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              type="text" id="username" placeholder="Usuário" required>
-          </div>
-          <div class="mb-6">
-            <input
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-              type="password" id="password" placeholder="Senha" required>
-          </div>
-          <div class="flex flex-col space-y-2">
-            <button
-              class="buttons-open bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              type="submit">
-              Entrar
-            </button>
-            <a href="#" id="show-register-form"
-              class="buttons-open self-center inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
-              Cadastre-se
-            </a>
-          </div>
-        </form>
-      </div>
+        <div class="w-full max-w-xs">
+            <form id="login-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <div class="mb-4">
+                    <input
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        type="text" id="username" placeholder="Usuário" required>
+                </div>
+                <div class="mb-6">
+                    <input
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+                        type="password" id="password" placeholder="Senha" required>
+                </div>
+                <div class="flex flex-col space-y-2">
+                    <button
+                        class="buttons-open bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        type="submit">
+                        Entrar
+                    </button>
+                    <a href="#" id="show-register-form"
+                        class="buttons-open self-center inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+                        Cadastre-se
+                    </a>
+                </div>
+            </form>
+        </div>
     `;
     document.body.appendChild(loginContainer);
+
+    const loginForm = document.getElementById('login-form');
+    const registerBtn = document.getElementById('show-register-form');
+
+    loginForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      loginUser();
+    });
+
+    registerBtn.addEventListener('click', function () {
+      showRegisterForm();
+    });
   }
 
   //*************************************************************************************************************//
@@ -67,13 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Descrição: Manipula a submissão do formulário de login, enviando os dados do usuário para o servidor e 
   //                processando a resposta para redirecionar ou mostrar erros.
   //*************************************************************************************************************//
-  loginForm.addEventListener('submit', function (event) {
-    event.preventDefault();
-    showLoading();
-    loginContainer.style.display = 'none';
 
+  function loginUser() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+
+    showLoading();
 
     fetch('/login', {
       method: 'POST',
@@ -90,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         removeLoginContainer();
         loggedInUsername = data.username;
-        if (data.user.admin_type === 1) {
+        if (data.user.admin_type === 0) {
           createSelectionScreen();
         } else {
           loadUserInterface();
@@ -101,7 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Erro no login:', error);
         showDialog('Erro no login: ' + error);
       });
-  });
+  }
+
 
   //*************************************************************************************************************//
   //     Título: Mostrar Formulário de Registro
@@ -202,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   }
-  registerBtn.addEventListener('click', showRegisterForm);
 
   //*************************************************************************************************************//
   //     Título: Criar Tela de Seleção de Modo
@@ -347,20 +356,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const navbar = document.createElement('div');
     navbar.innerHTML = `
     <div class="bg-gray-800 text-white p-4">
-      <div class="container mx-auto flex justify-between items-center">
+      <div class="container flex justify-between items-center">
         <div class="dropdown">
           <button id="dropdownMenuButton" class="dropdown-button">☰</button>
           <div id="dropdownMenu" class="dropdown-menu hidden">
+            <a href="#" id="ponto" class="dropdown-item">Ponto</a>
+            <a href="#" id="tarefas" class="dropdown-item">Tarefas</a>
+            <a href="#" id="configuracoes" class="dropdown-item">Configurações</a>
+            <div class="separator"></div>
             <a href="#" id="logout" class="dropdown-item">Logout</a>
           </div>
         </div>
       </div>
     </div>
-  `;
+`;
     appContainer.appendChild(navbar);
 
     const dropdownButton = document.getElementById('dropdownMenuButton');
     const dropdownMenu = document.getElementById('dropdownMenu');
+    const pontoButton = document.getElementById('ponto');
+    const tarefasButton = document.getElementById('tarefas');
+    const configuracoesButton = document.getElementById('configuracoes');
+    const logoutButton = document.getElementById('logout');
+
     dropdownButton.addEventListener('click', () => {
       dropdownMenu.classList.toggle('hidden');
     });
@@ -371,9 +389,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    document.getElementById('logout').addEventListener('click', () => {
-      alert('Logout realizado com sucesso!');
+    logoutButton.addEventListener('click', () => {
+      createLoginContainer();
+      loginContainer.style.display = 'flex';
+      appContainer.innerHTML = '';
+      appContainer.style.cssText = '';
+      appContainer.style.display = 'none';
+
     });
+
+    pontoButton.addEventListener('click', () => {
+      alert('Ponto clicked');
+    });
+
+    tarefasButton.addEventListener('click', () => {
+      alert('Tarefas clicked');
+    });
+
+    configuracoesButton.addEventListener('click', () => {
+      alert('Configurações clicked');
+    });
+
     fetch('/status')
       .then(response => response.json())
       .then(statusButtons => {

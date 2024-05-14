@@ -181,6 +181,12 @@ button:hover {
   background-color: #ddd;
 }
 
+.dropdown-menu .separator {
+  height: 1px;
+  background-color: #444;
+  margin: 5px 0;
+}
+
 .dropdown-button {
   background: var(--primary-color);
   color: white;
