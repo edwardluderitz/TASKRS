@@ -431,6 +431,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(error => console.error('Erro ao buscar status:', error));
   }
 
+  //*************************************************************************************************************//
+  //     Título: Adicionar Botões ao Contêiner da Aplicação
+  //     Descrição: Adiciona os botões de status ao contêiner da aplicação, configurando a visibilidade e a 
+  //                interatividade dos botões dentro do contexto da interface do usuário.
+  //*************************************************************************************************************//
   function addButtonsToButtonContainer(statusNames) {
     const container = document.getElementById('button-container');
     container.innerHTML = '';
@@ -466,31 +471,31 @@ document.addEventListener('DOMContentLoaded', () => {
   //*************************************************************************************************************//
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
-
+  
     statusButtons.forEach(button => {
       button.addEventListener('click', function () {
         if (this.classList.contains('selected')) {
           return;
         }
-
+  
         if (!startTime) {
           startTime = new Date();
         } else {
           const endTime = new Date();
           const duration = Math.round((endTime - startTime) / 1000);
-
+  
           if (isNaN(duration)) {
             console.error('Duração calculada é NaN');
             return;
           }
-
+  
           if (currentStatus !== '') {
             const statusData = {
               username: loggedInUsername,
               status: currentStatus,
               duration: duration
             };
-
+  
             fetch('/update_status', {
               method: 'POST',
               headers: {
@@ -507,68 +512,91 @@ document.addEventListener('DOMContentLoaded', () => {
               .then(text => console.log(text))
               .catch(error => console.error('Erro ao atualizar status:', error));
           }
-
+  
           startTime = new Date();
         }
-
+  
         currentStatus = this.innerText;
-
+  
+        disableAllStatusButtons();
+  
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
-
+  
         const statusName = this.innerText;
         fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`)
           .then(response => response.json())
           .then(data => {
             if (data.requireNote) {
-              const noteText = prompt("Este status requer um comentário. Por favor, insira seu comentário:");
-              if (noteText) {
-                const noteData = {
-                  username: loggedInUsername,
-                  buttons: statusName,
-                  noteText: noteText
-                };
-                fetch('/submit-note', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(noteData),
-                })
-                  .then(response => {
-                    if (!response.ok) {
-                      throw new Error('Erro ao submeter o comentário');
-                    }
-                    console.log('Comentário submetido com sucesso');
-                  })
-                  .catch(error => console.error('Erro:', error));
-              }
+              requestNoteAndSubmit(statusName);
+            } else {
+              enableAllStatusButtons();
             }
           })
-          .catch(error => console.error('Erro ao verificar a necessidade de comentário:', error));
+          .catch(error => {
+            console.error('Erro ao verificar a necessidade de comentário:', error);
+            enableAllStatusButtons();
+          });
       });
     });
   }
-
+  
   //*************************************************************************************************************//
-  //     Título: Adicionar Botões ao Contêiner da Aplicação
-  //     Descrição: Adiciona os botões de status ao contêiner da aplicação, configurando a visibilidade e a 
-  //                interatividade dos botões dentro do contexto da interface do usuário.
+  //     Título: Solicitar Nota e Submeter
+  //     Descrição: Função para solicitar um comentário e submetê-lo. Continua solicitando até que um comentário 
+  //                válido seja inserido.
   //*************************************************************************************************************//
-  function addButtonsToAppContainer(statusNames) {
-    const container = document.createElement('div');
-    container.classList.add('w-40', 'rounded-md', 'shadow-lg', 'p-2', 'bg-white');
-
-    statusNames.forEach(statusName => {
-      container.appendChild(createStatusButton(statusName));
+  function requestNoteAndSubmit(statusName) {
+    let noteText;
+    do {
+      noteText = prompt("Este status requer um comentário. Por favor, insira seu comentário:");
+    } while (!noteText);
+  
+    const noteData = {
+      username: loggedInUsername,
+      buttons: statusName,
+      noteText: noteText
+    };
+  
+    fetch('/submit-note', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(noteData),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erro ao submeter o comentário');
+      }
+      console.log('Comentário submetido com sucesso');
+    })
+    .catch(error => console.error('Erro:', error));
+  
+    enableAllStatusButtons();
+  }
+  
+  //*************************************************************************************************************//
+  //     Título: Desabilitar Todos os Botões de Status
+  //     Descrição: Desabilita todos os botões de status para evitar múltiplas seleções enquanto se aguarda 
+  //                uma ação do usuário.
+  //*************************************************************************************************************//
+  function disableAllStatusButtons() {
+    const statusButtons = document.querySelectorAll('.status-btn');
+    statusButtons.forEach(button => {
+      button.disabled = true;
     });
-
-    container.appendChild(document.createElement('div')).classList.add('border-t', 'mt-1');
-    container.appendChild(createAlwaysOnTopButton());
-
-    appContainer.appendChild(container);
-    setupStatusButtonEvents();
-    setupAlwaysOnTopButtonEvent();
+  }
+  
+  //*************************************************************************************************************//
+  //     Título: Habilitar Todos os Botões de Status
+  //     Descrição: Habilita todos os botões de status após a ação do usuário ser concluída.
+  //*************************************************************************************************************//
+  function enableAllStatusButtons() {
+    const statusButtons = document.querySelectorAll('.status-btn');
+    statusButtons.forEach(button => {
+      button.disabled = false;
+    });
   }
 
   //*************************************************************************************************************//
