@@ -237,3 +237,12 @@ button:hover {
 .dropdown-button:focus {
   background-color: #555;
 }
+
+#note-text {
+  outline: 1px solid #ccc;
+}
+
+#note-text:focus {
+  outline: none;
+  border: 2px solid #4299e1;
+}

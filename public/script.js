@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
           .then(response => response.json())
           .then(data => {
             if (data.requireNote) {
-              requestNoteAndSubmit(statusName);
+              showNoteDialog(statusName);
             } else {
               enableAllStatusButtons();
             }
@@ -537,44 +537,50 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro ao verificar a necessidade de comentário:', error);
             enableAllStatusButtons();
           });
+          enableAllStatusButtons(); 
       });
     });
   }
-  
-  //*************************************************************************************************************//
-  //     Título: Solicitar Nota e Submeter
-  //     Descrição: Função para solicitar um comentário e submetê-lo. Continua solicitando até que um comentário 
-  //                válido seja inserido.
-  //*************************************************************************************************************//
-  function requestNoteAndSubmit(statusName) {
-    let noteText;
-    do {
-      noteText = prompt("Este status requer um comentário. Por favor, insira seu comentário:");
-    } while (!noteText);
-  
-    const noteData = {
-      username: loggedInUsername,
-      buttons: statusName,
-      noteText: noteText
-    };
-  
-    fetch('/submit-note', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(noteData),
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erro ao submeter o comentário');
+
+  function showNoteDialog(statusName) {
+    const noteDialog = document.getElementById('note-dialog');
+    const submitButton = document.getElementById('submit-note');
+    const noteTextArea = document.getElementById('note-text');
+
+    noteDialog.classList.remove('hidden');
+
+    submitButton.onclick = function () {
+      const noteText = noteTextArea.value.trim();
+      if (noteText) {
+        const noteData = {
+          username: loggedInUsername,
+          buttons: statusName,
+          noteText: noteText
+        };
+
+        fetch('/submit-note', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(noteData),
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Erro ao submeter o comentário');
+            }
+            console.log('Comentário submetido com sucesso');
+          })
+          .catch(error => console.error('Erro:', error));
+
+        noteDialog.classList.add('hidden');
+        noteTextArea.value = '';
+      } else {
+        alert('Por favor, insira um comentário.');
       }
-      console.log('Comentário submetido com sucesso');
-    })
-    .catch(error => console.error('Erro:', error));
-  
-    enableAllStatusButtons();
+    };
   }
+
   
   //*************************************************************************************************************//
   //     Título: Desabilitar Todos os Botões de Status
