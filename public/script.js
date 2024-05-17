@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const confirmPassword = document.getElementById('confirm-password').value;
 
       if (password !== confirmPassword) {
-        alert('As senhas não coincidem!');
+        showDialog('As senhas não coincidem!');
         return;
       }
 
@@ -409,15 +409,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     pontoButton.addEventListener('click', () => {
-      alert('Ponto clicked');
+      showDialog('Ponto clicked');
     });
 
     tarefasButton.addEventListener('click', () => {
-      alert('Tarefas clicked');
+      showDialog('Tarefas clicked');
     });
 
     configuracoesButton.addEventListener('click', () => {
-      alert('Configurações clicked');
+      showDialog('Configurações clicked');
     });
 
     fetch('/status')
@@ -471,31 +471,31 @@ document.addEventListener('DOMContentLoaded', () => {
   //*************************************************************************************************************//
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
-  
+
     statusButtons.forEach(button => {
       button.addEventListener('click', function () {
         if (this.classList.contains('selected')) {
           return;
         }
-  
+
         if (!startTime) {
           startTime = new Date();
         } else {
           const endTime = new Date();
           const duration = Math.round((endTime - startTime) / 1000);
-  
+
           if (isNaN(duration)) {
             console.error('Duração calculada é NaN');
             return;
           }
-  
+
           if (currentStatus !== '') {
             const statusData = {
               username: loggedInUsername,
               status: currentStatus,
               duration: duration
             };
-  
+
             fetch('/update_status', {
               method: 'POST',
               headers: {
@@ -512,17 +512,17 @@ document.addEventListener('DOMContentLoaded', () => {
               .then(text => console.log(text))
               .catch(error => console.error('Erro ao atualizar status:', error));
           }
-  
+
           startTime = new Date();
         }
-  
+
         currentStatus = this.innerText;
-  
+
         disableAllStatusButtons();
-  
+
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
-  
+
         const statusName = this.innerText;
         fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`)
           .then(response => response.json())
@@ -537,11 +537,18 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Erro ao verificar a necessidade de comentário:', error);
             enableAllStatusButtons();
           });
-          enableAllStatusButtons(); 
+        enableAllStatusButtons();
       });
     });
   }
 
+  //*************************************************************************************************************//
+  //     Título: Mostrar Diálogo de Nota
+  //     Descrição: Esta função exibe um diálogo para adicionar uma nota quando um status que requer um comentário
+  //                é selecionado. Se o usuário tentar enviar a nota sem inserir um comentário, uma mensagem de 
+  //                diálogo é exibida solicitando o comentário. Caso contrário, a nota é enviada para o servidor
+  //                e o diálogo é ocultado.
+  //*************************************************************************************************************//
   function showNoteDialog(statusName) {
     const noteDialog = document.getElementById('note-dialog');
     const submitButton = document.getElementById('submit-note');
@@ -576,12 +583,11 @@ document.addEventListener('DOMContentLoaded', () => {
         noteDialog.classList.add('hidden');
         noteTextArea.value = '';
       } else {
-        alert('Por favor, insira um comentário.');
+        showDialog('Por favor, insira um comentário.');
       }
     };
   }
 
-  
   //*************************************************************************************************************//
   //     Título: Desabilitar Todos os Botões de Status
   //     Descrição: Desabilita todos os botões de status para evitar múltiplas seleções enquanto se aguarda 
@@ -593,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
       button.disabled = true;
     });
   }
-  
+
   //*************************************************************************************************************//
   //     Título: Habilitar Todos os Botões de Status
   //     Descrição: Habilita todos os botões de status após a ação do usuário ser concluída.

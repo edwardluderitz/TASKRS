@@ -121,6 +121,13 @@ button:hover {
   margin: 0 auto;
 }
 
+#custom-dialog {
+  z-index: 1000;
+}
+
+#note-dialog {
+  z-index: 900;
+}
 
 @media (max-width: 240px) {
 
