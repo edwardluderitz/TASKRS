@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
+    removeLoginContainer();
     showLoading();
 
     fetch('/login', {
@@ -94,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hideLoading();
         if (!data.user) {
           showDialog('Erro no login: ' + (data.error || 'Usuário ou senha incorretos'));
-          loginContainer.style.display = 'flex';
+          createLoginContainer();
           return;
         }
         removeLoginContainer();
@@ -107,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(error => {
         hideLoading();
+        createLoginContainer();
         console.error('Erro no login:', error);
         showDialog('Erro no login: ' + error);
       });
@@ -119,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //                preparando o ambiente para a entrada de novos dados de usuário.
   //*************************************************************************************************************//
   function showRegisterForm() {
-    loginContainer.style.display = 'none';
+    removeLoginContainer();
     appContainer.style.display = 'flex';
     appContainer.style.flexDirection = 'column';
     appContainer.style.alignItems = 'center';
@@ -160,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
       appContainer.innerHTML = '';
       appContainer.style.cssText = '';
       appContainer.style.display = 'none';
-      loginContainer.style.display = 'flex';
+      createLoginContainer();
     });
 
     const registerForm = document.getElementById('register-form');
