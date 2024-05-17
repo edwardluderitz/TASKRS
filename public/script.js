@@ -469,14 +469,19 @@ document.addEventListener('DOMContentLoaded', () => {
   //                incluindo o cálculo da duração e a interação com a API do servidor para atualização do status 
   //                e submissão de comentários quando necessário.
   //*************************************************************************************************************//
+  let actionInProgress = false;
+
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
 
     statusButtons.forEach(button => {
       button.addEventListener('click', function () {
-        if (this.classList.contains('selected')) {
+        if (actionInProgress || this.classList.contains('selected')) {
           return;
         }
+
+        actionInProgress = true;
+        disableAllStatusButtons();
 
         if (!startTime) {
           startTime = new Date();
@@ -486,6 +491,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (isNaN(duration)) {
             console.error('Duração calculada é NaN');
+            enableAllStatusButtons();
+            actionInProgress = false;
             return;
           }
 
@@ -510,15 +517,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return response.text();
               })
               .then(text => console.log(text))
-              .catch(error => console.error('Erro ao atualizar status:', error));
+              .catch(error => console.error('Erro ao atualizar status:', error))
+              .finally(() => {
+                enableAllStatusButtons();
+                actionInProgress = false;
+              });
           }
 
           startTime = new Date();
         }
 
         currentStatus = this.innerText;
-
-        disableAllStatusButtons();
 
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
@@ -531,13 +540,14 @@ document.addEventListener('DOMContentLoaded', () => {
               showNoteDialog(statusName);
             } else {
               enableAllStatusButtons();
+              actionInProgress = false;
             }
           })
           .catch(error => {
             console.error('Erro ao verificar a necessidade de comentário:', error);
             enableAllStatusButtons();
+            actionInProgress = false;
           });
-        enableAllStatusButtons();
       });
     });
   }
@@ -546,17 +556,25 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Título: Mostrar Diálogo de Nota
   //     Descrição: Esta função exibe um diálogo para adicionar uma nota quando um status que requer um comentário
   //                é selecionado. Se o usuário tentar enviar a nota sem inserir um comentário, uma mensagem de 
-  //                diálogo é exibida solicitando o comentário. Caso contrário, a nota é enviada para o servidor
-  //                e o diálogo é ocultado.
+  //                diálogo é exibida solicitando o comentário.
   //*************************************************************************************************************//
+  let submitInProgress = false;
+
   function showNoteDialog(statusName) {
     const noteDialog = document.getElementById('note-dialog');
     const submitButton = document.getElementById('submit-note');
     const noteTextArea = document.getElementById('note-text');
 
     noteDialog.classList.remove('hidden');
+    disableAllStatusButtons();
 
     submitButton.onclick = function () {
+      if (submitInProgress) {
+        return;
+      }
+      submitInProgress = true;
+      submitButton.disabled = true;
+
       const noteText = noteTextArea.value.trim();
       if (noteText) {
         const noteData = {
@@ -577,13 +595,22 @@ document.addEventListener('DOMContentLoaded', () => {
               throw new Error('Erro ao submeter o comentário');
             }
             console.log('Comentário submetido com sucesso');
+            noteDialog.classList.add('hidden');
+            noteTextArea.value = '';
           })
-          .catch(error => console.error('Erro:', error));
-
-        noteDialog.classList.add('hidden');
-        noteTextArea.value = '';
+          .catch(error => {
+            console.error('Erro:', error);
+          })
+          .finally(() => {
+            enableAllStatusButtons();
+            submitInProgress = false;
+            submitButton.disabled = false;
+            actionInProgress = false;
+          });
       } else {
         showDialog('Por favor, insira um comentário.');
+        submitInProgress = false;
+        submitButton.disabled = false;
       }
     };
   }
@@ -596,7 +623,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function disableAllStatusButtons() {
     const statusButtons = document.querySelectorAll('.status-btn');
     statusButtons.forEach(button => {
-      button.disabled = true;
+      if (!button.classList.contains('selected')) {
+        button.disabled = true;
+      }
     });
   }
 

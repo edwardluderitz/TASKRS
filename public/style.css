@@ -95,6 +95,10 @@ button:hover {
   margin: 0.5rem 0;
 }
 
+.status-btn:disabled, 
+#submit-note:disabled {
+  cursor: not-allowed;
+}
 
 #show-register-form {
   background: none;

@@ -222,6 +222,7 @@ app.get('/status/require-note', (req, res) => {
 //                completa de atividades críticas ou observações importantes.
 //*************************************************************************************************************//
 app.post('/submit-note', (req, res) => {
+    console.log('Requisição recebida:', req.body);
     const { username, buttons, noteText } = req.body;
     const groupUser = req.session.groupUser;
     const offset = -3;
