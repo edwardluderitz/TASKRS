@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const navbar = document.createElement('div');
     navbar.innerHTML = `
-    <div class="bg-gray-800 text-white p-4">
+    <div class="bg-gray-800 text-white p-2">
       <div class="container flex justify-between items-center">
         <div class="dropdown">
           <button id="dropdownMenuButton" class="dropdown-button">☰</button>
@@ -364,6 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <a href="#" id="tarefas" class="dropdown-item">Tarefas</a>
             <a href="#" id="configuracoes" class="dropdown-item">Configurações</a>
             <div class="separator"></div>
+            <a href="#" id="alwaysOnTopButton" class="dropdown-item">Sempre no Topo</a>
             <a href="#" id="logout" class="dropdown-item">Logout</a>
           </div>
         </div>
@@ -445,7 +446,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     container.appendChild(document.createElement('div')).classList.add('border-t', 'mt-1');
-    container.appendChild(createAlwaysOnTopButton());
 
     setupStatusButtonEvents();
     setupAlwaysOnTopButtonEvent();
@@ -615,15 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Título: Botão Sempre no Topo
   //     Descrição: Esse botão serve para que mantenha a aplicação acima de qualquer coisa quando clicado.
   //*************************************************************************************************************//
-  function createAlwaysOnTopButton() {
-    const button = document.createElement('button');
-    button.classList.add('always-on-top-btn', 'w-full', 'text-center', 'pl-2', 'pr-4', 'py-1', 'rounded-md', 'font-semibold');
-    button.innerText = 'Always on top';
-    return button;
-  }
-
   function setupAlwaysOnTopButtonEvent() {
-    const alwaysOnTopButton = document.querySelector('.always-on-top-btn');
+    const alwaysOnTopButton = document.getElementById('alwaysOnTopButton');
     alwaysOnTopButton.addEventListener('click', function () {
       const shouldSetAlwaysOnTop = this.classList.toggle('toggle-on');
       window.electron.ipcRenderer.send('toggle-always-on-top', shouldSetAlwaysOnTop);
