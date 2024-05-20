@@ -257,3 +257,30 @@ button:hover {
   outline: none;
   border: 2px solid #4299e1;
 }
+
+.admin-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-button {
+  width: 100%;
+  max-width: 200px;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+}
+
+.admin-button:hover {
+  background-color: var(--hover-color);
+}

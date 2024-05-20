@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         removeLoginContainer();
         loggedInUsername = data.username;
-        if (data.user.admin_type === 0) {
+        if (data.user.admin_type === 1) {
           createSelectionScreen();
         } else {
           loadUserInterface();
@@ -267,21 +267,53 @@ document.addEventListener('DOMContentLoaded', () => {
     appContainer.innerHTML = '';
     appContainer.style.display = 'block';
 
+    const navbar = document.createElement('div');
+    navbar.className = 'bg-gray-800 text-white p-2';
+    navbar.innerHTML = `
+      <div class="container flex justify-start items-center">
+        <div class="dropdown">
+          <button id="dropdownMenuButton" class="dropdown-button">☰</button>
+          <div id="dropdownMenu" class="dropdown-menu hidden">
+            <a href="#" id="logout" class="dropdown-item">Logout</a>
+          </div>
+        </div>
+        <div class="ml-4 text-lg font-bold">Painel de Administração</div>
+      </div>
+    `;
+    appContainer.appendChild(navbar);
 
-    const adminTitle = document.createElement('h2');
-    adminTitle.textContent = 'Painel de Administração';
-    appContainer.appendChild(adminTitle);
+    const adminContainer = document.createElement('div');
+    adminContainer.className = 'admin-container';
 
+    const userManagerButton = createAdminButton('Gerenciamento de Usuários', userManager);
+    const groupManagerButton = createAdminButton('Gerenciamento de Grupos', groupManager);
 
-    const userIndicatorButton = createAdminButton('Indicadores dos Usuários', viewUserIndicators);
-    const addUserButton = createAdminButton('Adicionar Novo Usuário', addNewUser);
-    const addGroupButton = createAdminButton('Adicionar Grupo', addGroup);
-    const resetPasswordButton = createAdminButton('Resetar Senha', resetPassword);
+    adminContainer.appendChild(userManagerButton);
+    adminContainer.appendChild(groupManagerButton);
 
-    appContainer.appendChild(userIndicatorButton);
-    appContainer.appendChild(addUserButton);
-    appContainer.appendChild(addGroupButton);
-    appContainer.appendChild(resetPasswordButton);
+    appContainer.appendChild(adminContainer);
+
+    const dropdownButton = document.getElementById('dropdownMenuButton');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const logoutButton = document.getElementById('logout');
+
+    dropdownButton.addEventListener('click', () => {
+      dropdownMenu.classList.toggle('hidden');
+    });
+
+    window.addEventListener('click', function (e) {
+      if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+        dropdownMenu.classList.add('hidden');
+      }
+    });
+
+    logoutButton.addEventListener('click', () => {
+      createLoginContainer();
+      loginContainer.style.display = 'flex';
+      appContainer.innerHTML = '';
+      appContainer.style.cssText = '';
+      appContainer.style.display = 'none';
+    });
   }
 
   //*************************************************************************************************************//
@@ -291,18 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
   //*************************************************************************************************************//
   function createAdminButton(buttonText, onClickFunction) {
     const button = document.createElement('button');
+    button.className = 'admin-button';
     button.textContent = buttonText;
     button.addEventListener('click', onClickFunction);
     return button;
-  }
-
-  //*************************************************************************************************************//
-  //     Título: Visualizar Indicadores dos Usuários
-  //     Descrição: Função para logar a ação de visualizar indicadores dos usuários, parte das ferramentas 
-  //                administrativas para monitoramento e gestão de usuário.
-  //*************************************************************************************************************//
-  function viewUserIndicators() {
-    console.log('Visualizando indicadores dos usuários');
   }
 
   //*************************************************************************************************************//
@@ -310,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Descrição: Permite ao administrador adicionar um novo usuário ao sistema, uma parte crítica das 
   //                funcionalidades de gestão de usuários.
   //*************************************************************************************************************//
-  function addNewUser() {
+  function userManager() {
     console.log('Adicionando um novo usuário');
   }
 
@@ -319,17 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Descrição: Fornece funcionalidade para criar novos grupos de usuários, facilitando a organização e 
   //                gerenciamento por parte dos administradores.
   //*************************************************************************************************************//
-  function addGroup() {
+  function groupManager() {
     console.log('Adicionando um grupo');
-  }
-
-  //*************************************************************************************************************//
-  //     Título: Resetar Senha
-  //     Descrição: Oferece ao administrador a capacidade de resetar senhas de usuários, um elemento essencial para 
-  //                a manutenção da segurança e assistência ao usuário.
-  //*************************************************************************************************************//
-  function resetPassword() {
-    console.log('Resetando senha');
   }
 
   //*************************************************************************************************************//
