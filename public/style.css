@@ -5,8 +5,17 @@
   --hover-color: #555;
   --background-color: #f9f9f9;
   --text-color: #333;
-  --border-radius: 4px;
+  --border-radius: 8px;
   --transition-speed: 0.3s;
+  --title-color: #222121;
+  --title-font: 'Georgia', serif;
+  --title-letter-spacing: 0.1em;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
 .selected {
@@ -42,23 +51,66 @@
   min-height: 100vh;
 }
 
-input[type="text"],
-input[type="password"],
-.buttons-open {
+#login-container .w-full {
+  max-width: 280px;
   width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
-  border-radius: 0.375rem;
+}
+
+#login-container form {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#login-container h2 {
+  margin-bottom: 15px;
+  color: var(--title-color);
+  text-align: center;
+  font-family: var(--title-font);
+  letter-spacing: var(--title-letter-spacing);
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
   border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.075);
+  transition: all var(--transition-speed);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px rgba(53, 122, 189, 0.5);
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: var(--border-radius);
+  background-color: var(--primary-color);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+button:hover {
+  background-color: var(--hover-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .buttons-open {
-
   padding: 0.5rem;
   font-size: 0.875rem;
 }
-
 
 #show-register-form,
 #back-to-login {
@@ -95,27 +147,28 @@ button:hover {
   margin: 0.5rem 0;
 }
 
-.status-btn:disabled, 
+.status-btn:disabled,
 #submit-note:disabled {
   cursor: not-allowed;
 }
 
 #show-register-form {
-  background: none;
-  border: none;
-  color: #4a90e2;
-  padding: 0;
-  margin: 0;
-  text-decoration: underline;
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 12px;
+  transition: color var(--transition-speed);
 }
 
 #show-register-form:hover {
-  color: #357abd;
+  color: var(--hover-color);
 }
 
 #login-form,
 #register-form {
-  max-width: 400px;
+  max-width: 280px;
   margin: auto;
 }
 
@@ -151,24 +204,43 @@ button:hover {
 }
 
 .modal {
-  display: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: fixed;
   z-index: 1;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto;
-  background-color: rgb(0, 0, 0);
+  overflow: hidden;
   background-color: rgba(0, 0, 0, 0.4);
 }
 
 .modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
+  background-color: var(--background-color);
   padding: 20px;
   border: 1px solid #888;
-  width: 80%;
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  max-width: 320px;
+  width: calc(100% - 40px);
+  box-sizing: border-box;
+}
+
+.mode-btn {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+}
+
+.mode-btn:hover {
+  background-color: var(--hover-color);
 }
 
 .close {

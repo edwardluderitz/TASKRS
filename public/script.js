@@ -19,31 +19,32 @@ document.addEventListener('DOMContentLoaded', () => {
     loginContainer.id = 'login-container';
     loginContainer.className = 'flex items-center justify-center min-h-screen';
     loginContainer.innerHTML = `
-        <div class="w-full max-w-xs">
-            <form id="login-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <div class="mb-4">
-                    <input
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        type="text" id="username" placeholder="Usuário" required>
-                </div>
-                <div class="mb-6">
-                    <input
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-                        type="password" id="password" placeholder="Senha" required>
-                </div>
-                <div class="flex flex-col space-y-2">
-                    <button
-                        class="buttons-open bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                        type="submit">
-                        Entrar
-                    </button>
-                    <a href="#" id="show-register-form"
-                        class="buttons-open self-center inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
-                        Cadastre-se
-                    </a>
-                </div>
-            </form>
-        </div>
+      <div class="w-full max-w-xs">
+        <form id="login-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+          <h2>TASKRS</h2>
+          <div class="mb-4">
+            <input
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              type="text" id="username" placeholder="Usuário" required>
+          </div>
+          <div class="mb-6">
+            <input
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              type="password" id="password" placeholder="Senha" required>
+          </div>
+          <div class="flex flex-col space-y-2">
+            <button
+              class="buttons-open bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              type="submit">
+              Entrar
+            </button>
+            <a href="#" id="show-register-form"
+              class="buttons-open self-center inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+              Cadastre-se
+            </a>
+          </div>
+        </form>
+      </div>
     `;
     document.body.appendChild(loginContainer);
 
@@ -202,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
           showDialog('Registro concluído com sucesso!');
           const registerContainer = document.getElementById('register-container');
           appContainer.removeChild(registerContainer);
-          loginContainer.style.display = 'flex';
+          createLoginContainer();
           appContainer.innerHTML = '';
           appContainer.style.cssText = '';
           appContainer.style.display = 'none';
@@ -222,16 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
   //*************************************************************************************************************//
   function createSelectionScreen() {
     const selectionScreen = document.createElement('div');
-    selectionScreen.style.display = 'block';
+    selectionScreen.style.display = 'flex';
     selectionScreen.id = 'selectionScreen';
     selectionScreen.className = 'modal';
     selectionScreen.innerHTML = `
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2>Escolha o Modo</h2>
-      <button id="userModeBtn">Modo Usuário</button>
-      <button id="adminModeBtn">Modo Admin</button>
-    </div>
+      <div class="modal-content flex flex-col items-center justify-center p-4 rounded shadow-lg bg-white">
+        <button id="userModeBtn" class="mode-btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-2">Modo Usuário</button>
+        <button id="adminModeBtn" class="mode-btn bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Modo Admin</button>
+      </div>
     `;
 
     document.body.appendChild(selectionScreen);
