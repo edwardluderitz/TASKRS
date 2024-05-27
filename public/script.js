@@ -343,7 +343,124 @@ document.addEventListener('DOMContentLoaded', () => {
   //                gerenciamento por parte dos administradores.
   //*************************************************************************************************************//
   function groupManager() {
-    console.log('Adicionando um grupo');
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = '';
+
+    const createGroupButton = document.createElement('button');
+    createGroupButton.textContent = 'Criar Grupo';
+    createGroupButton.className = 'admin-button';
+    createGroupButton.addEventListener('click', createGroup);
+
+    const editGroupButton = document.createElement('button');
+    editGroupButton.textContent = 'Editar Grupo';
+    editGroupButton.className = 'admin-button';
+    editGroupButton.addEventListener('click', editGroup);
+
+    adminContainer.appendChild(createGroupButton);
+    adminContainer.appendChild(editGroupButton);
+
+    const backButton = document.createElement('button');
+    backButton.textContent = 'Voltar';
+    backButton.className = 'admin-button';
+    backButton.addEventListener('click', loadAdminInterface);
+
+    adminContainer.appendChild(backButton);
+  }
+
+  function createGroup() {
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = `
+      <h2>Criar Grupo</h2>
+      <form id="create-group-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+          <div class="mb-4">
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Nome do Grupo" required />
+          </div>
+          <button type="submit" class="admin-button">Criar</button>
+          <button type="button" id="back-button" class="admin-button">Voltar</button>
+      </form>
+    `;
+
+    const form = document.getElementById('create-group-form');
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const groupName = document.getElementById('new-group-name').value.trim();
+
+      if (!groupName) {
+        showDialog('Por favor, insira um nome para o grupo');
+        return;
+      }
+
+      fetch('/create_group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_user: groupName })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showDialog('Grupo criado com sucesso');
+            groupManager();
+          } else {
+            showDialog('Erro ao criar grupo: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao criar grupo:', error);
+          showDialog('Erro ao criar grupo. Por favor, tente novamente mais tarde.');
+        });
+    });
+
+    document.getElementById('back-button').addEventListener('click', groupManager);
+  }
+
+  function editGroup() {
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = `
+      <h2>Editar Grupo</h2>
+      <form id="edit-group-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+          <div class="mb-4">
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="existing-group-name" placeholder="Nome Atual do Grupo" required />
+          </div>
+          <div class="mb-4">
+              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Novo Nome do Grupo" required />
+          </div>
+          <button type="submit" class="admin-button">Editar</button>
+          <button type="button" id="back-button" class="admin-button">Voltar</button>
+      </form>
+    `;
+
+    const form = document.getElementById('edit-group-form');
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const groupName = document.getElementById('existing-group-name').value.trim();
+      const newGroupName = document.getElementById('new-group-name').value.trim();
+
+      if (!groupName || !newGroupName) {
+        showDialog('Por favor, preencha ambos os campos');
+        return;
+      }
+
+      fetch('/edit_group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_user: groupName, new_group_user: newGroupName })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showDialog('Grupo editado com sucesso');
+            groupManager();
+          } else {
+            showDialog('Erro ao editar grupo: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao editar grupo:', error);
+          showDialog('Erro ao editar grupo. Por favor, tente novamente mais tarde.');
+        });
+    });
+
+    document.getElementById('back-button').addEventListener('click', groupManager);
   }
 
   //*************************************************************************************************************//

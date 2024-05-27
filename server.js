@@ -319,3 +319,76 @@ app.post('/update_status', (req, res) => {
         }
     });
 });
+
+//*************************************************************************************************************//
+//     Título: Criação de Grupo
+//     Descrição: Possibilita criação de grupo para gerenciamento de status de usuários
+//*************************************************************************************************************//
+app.post('/create_group', (req, res) => {
+    const { group_user } = req.body;
+
+    if (!group_user || typeof group_user !== 'string') {
+        return res.status(400).json({ success: false, message: 'Nome do grupo inválido' });
+    }
+
+    pool.query('SELECT * FROM group_tasks WHERE LOWER(group_user) = LOWER(?)', [group_user], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro ao verificar existência do grupo' });
+        }
+
+        if (results.length > 0) {
+            return res.status(409).json({ success: false, message: 'Grupo já existe' });
+        }
+
+        pool.query('INSERT INTO group_tasks (group_user) VALUES (?)', [group_user], (error) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ success: false, message: 'Erro ao criar o grupo' });
+            }
+            res.json({ success: true, message: 'Grupo criado com sucesso' });
+        });
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Edição de Grupo
+//     Descrição: Permite que seja possível renomear um grupo.
+//*************************************************************************************************************//
+app.post('/edit_group', (req, res) => {
+    const { group_user, new_group_user } = req.body;
+
+    if (!group_user || !new_group_user || typeof group_user !== 'string' || typeof new_group_user !== 'string') {
+        return res.status(400).json({ success: false, message: 'Nomes de grupo inválidos' });
+    }
+
+    pool.query('SELECT * FROM group_tasks WHERE BINARY group_user = ?', [group_user], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro ao verificar existência do grupo' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Grupo não encontrado' });
+        }
+
+        pool.query('SELECT * FROM group_tasks WHERE LOWER(group_user) = LOWER(?) AND BINARY group_user != ?', [new_group_user, group_user], (err, results) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ success: false, message: 'Erro ao verificar novo nome do grupo' });
+            }
+
+            if (results.length > 0) {
+                return res.status(409).json({ success: false, message: 'Novo nome de grupo já existe' });
+            }
+
+            pool.query('UPDATE group_tasks SET group_user = ? WHERE BINARY group_user = ?', [new_group_user, group_user], (error) => {
+                if (error) {
+                    console.error(error);
+                    return res.status(500).json({ success: false, message: 'Erro ao renomear o grupo' });
+                }
+                res.json({ success: true, message: 'Grupo editado com sucesso' });
+            });
+        });
+    });
+});
