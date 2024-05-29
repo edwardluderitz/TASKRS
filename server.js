@@ -392,3 +392,28 @@ app.post('/edit_group', (req, res) => {
         });
     });
 });
+
+//*************************************************************************************************************//
+//     Título: Remoção de Grupo
+//     Descrição: Permite que um grupo seja removido do sistema.
+//*************************************************************************************************************//
+app.post('/delete_group', (req, res) => {
+    const { group_user } = req.body;
+
+    if (!group_user || typeof group_user !== 'string') {
+        return res.status(400).json({ success: false, message: 'Nome do grupo inválido' });
+    }
+
+    pool.query('DELETE FROM group_tasks WHERE LOWER(group_user) = LOWER(?)', [group_user], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erro ao remover o grupo' });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Grupo não encontrado' });
+        }
+
+        res.json({ success: true, message: 'Grupo removido com sucesso' });
+    });
+});

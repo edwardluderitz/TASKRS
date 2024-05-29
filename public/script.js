@@ -425,6 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Novo Nome do Grupo" required />
           </div>
           <button type="submit" class="admin-button">Editar</button>
+          <button type="button" id="delete-button" class="admin-button" style="background-color: red; color: white;">Remover Grupo</button>
           <button type="button" id="back-button" class="admin-button">Voltar</button>
       </form>
     `;
@@ -457,6 +458,34 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(error => {
           console.error('Erro ao editar grupo:', error);
           showDialog('Erro ao editar grupo. Por favor, tente novamente mais tarde.');
+        });
+    });
+
+    document.getElementById('delete-button').addEventListener('click', function () {
+      const groupName = document.getElementById('existing-group-name').value.trim();
+
+      if (!groupName) {
+        showDialog('Por favor, insira o nome do grupo que deseja remover');
+        return;
+      }
+
+      fetch('/delete_group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group_user: groupName })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showDialog('Grupo removido com sucesso');
+            groupManager();
+          } else {
+            showDialog('Erro ao remover grupo: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao remover grupo:', error);
+          showDialog('Erro ao remover grupo. Por favor, tente novamente mais tarde.');
         });
     });
 
