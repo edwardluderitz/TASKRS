@@ -370,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function createGroup() {
     const adminContainer = document.querySelector('.admin-container');
     adminContainer.innerHTML = `
-      <h2>Criar Grupo</h2>
       <form id="create-group-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
           <div class="mb-4">
               <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Nome do Grupo" required />
@@ -413,27 +412,35 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('back-button').addEventListener('click', groupManager);
   }
 
+  //*************************************************************************************************************//
+  //     Título: Edição de Grupo
+  //     Descrição: Fornece funcionalidade para editar os grupos de usuários, incluindo remoção de grupos.
+  //*************************************************************************************************************//
   function editGroup() {
     const adminContainer = document.querySelector('.admin-container');
     adminContainer.innerHTML = `
-      <h2>Editar Grupo</h2>
-      <form id="edit-group-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <div class="mb-4">
-              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="existing-group-name" placeholder="Nome Atual do Grupo" required />
-          </div>
-          <div class="mb-4">
-              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Novo Nome do Grupo" required />
-          </div>
-          <button type="submit" class="admin-button">Editar</button>
-          <button type="button" id="delete-button" class="admin-button" style="background-color: red; color: white;">Remover Grupo</button>
-          <button type="button" id="back-button" class="admin-button">Voltar</button>
+      <form id="edit-group-form">
+        <div class="mb-4 flex items-center">
+          <select id="existing-group-select" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <option value="">Selecione</option>
+          </select>
+          <button type="button" id="delete-button" class="delete-button ml-2">&times;</button>
+        </div>
+        <div class="mb-4">
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Novo Nome do Grupo" required />
+        </div>
+        <button type="submit" class="admin-button">Editar</button>
+        <button type="button" id="back-button" class="admin-button">Voltar</button>
       </form>
     `;
+
+    fetchGroups();
+
 
     const form = document.getElementById('edit-group-form');
     form.addEventListener('submit', function (event) {
       event.preventDefault();
-      const groupName = document.getElementById('existing-group-name').value.trim();
+      const groupName = document.getElementById('existing-group-select').value.trim();
       const newGroupName = document.getElementById('new-group-name').value.trim();
 
       if (!groupName || !newGroupName) {
@@ -462,10 +469,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('delete-button').addEventListener('click', function () {
-      const groupName = document.getElementById('existing-group-name').value.trim();
+      const groupName = document.getElementById('existing-group-select').value.trim();
 
       if (!groupName) {
-        showDialog('Por favor, insira o nome do grupo que deseja remover');
+        showDialog('Por favor, selecione o grupo que deseja remover');
         return;
       }
 
@@ -490,6 +497,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('back-button').addEventListener('click', groupManager);
+  }
+
+  function fetchGroups() {
+    fetch('/get_groups')
+      .then(response => response.json())
+      .then(groups => {
+        const select = document.getElementById('existing-group-select');
+        groups.forEach(group => {
+          const option = document.createElement('option');
+          option.value = group.name;
+          option.textContent = group.name;
+          select.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Erro ao buscar grupos:', error));
   }
 
   //*************************************************************************************************************//

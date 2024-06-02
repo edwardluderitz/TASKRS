@@ -417,3 +417,17 @@ app.post('/delete_group', (req, res) => {
         res.json({ success: true, message: 'Grupo removido com sucesso' });
     });
 });
+
+//*************************************************************************************************************//
+//     Título: Busca de Grupos
+//     Descrição: Faz a busca dos grupos no Banco de Dados.
+//*************************************************************************************************************//
+app.get('/get_groups', (req, res) => {
+    pool.query('SELECT group_user AS name FROM group_tasks', (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar grupos' });
+        }
+        res.json(results);
+    });
+});
