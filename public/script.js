@@ -79,40 +79,43 @@ document.addEventListener('DOMContentLoaded', () => {
   //                processando a resposta para redirecionar ou mostrar erros.
   //*************************************************************************************************************//
 
-  function loginUser() {
+  async function loginUser() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
     removeLoginContainer();
     showLoading();
 
-    fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        hideLoading();
-        if (!data.user) {
-          showDialog('Erro no login: ' + (data.error || 'Usuário ou senha incorretos'));
-          createLoginContainer();
-          return;
-        }
-        removeLoginContainer();
-        loggedInUsername = data.username;
-        if (data.user.admin_type === 1) {
-          createSelectionScreen();
-        } else {
-          loadUserInterface();
-        }
-      })
-      .catch(error => {
-        hideLoading();
-        createLoginContainer();
-        console.error('Erro no login:', error);
-        showDialog('Erro no login: ' + error);
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
       });
+
+      const data = await response.json();
+
+      hideLoading();
+
+      if (!data.user) {
+        showDialog('Erro no login: ' + (data.error || 'Usuário ou senha incorretos'));
+        createLoginContainer();
+        return;
+      }
+
+      removeLoginContainer();
+      loggedInUsername = data.username;
+      if (data.user.admin_type === 1) {
+        createSelectionScreen();
+      } else {
+        loadUserInterface();
+      }
+    } catch (error) {
+      hideLoading();
+      createLoginContainer();
+      console.error('Erro no login:', error);
+      showDialog('Erro no login: ' + error);
+    }
   }
 
 
@@ -184,34 +187,33 @@ document.addEventListener('DOMContentLoaded', () => {
         password: password,
       };
 
-      fetch('/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      })
-        .then(response => {
-          if (!response.ok) {
-            return response.json().then(data => {
-              throw new Error(data.error);
-            });
-          }
-          return response.json();
-        })
-        .then(data => {
-          showDialog('Registro concluído com sucesso!');
-          const registerContainer = document.getElementById('register-container');
-          appContainer.removeChild(registerContainer);
-          createLoginContainer();
-          appContainer.innerHTML = '';
-          appContainer.style.cssText = '';
-          appContainer.style.display = 'none';
-        })
-        .catch(error => {
-          console.error('Erro no registro:', error);
-          showDialog('Erro no registro:' + error);
+      try {
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
         });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error);
+        }
+
+        const data = await response.json();
+
+        showDialog('Registro concluído com sucesso!');
+        const registerContainer = document.getElementById('register-container');
+        appContainer.removeChild(registerContainer);
+        createLoginContainer();
+        appContainer.innerHTML = '';
+        appContainer.style.cssText = '';
+        appContainer.style.display = 'none';
+      } catch (error) {
+        console.error('Erro no registro:', error);
+        showDialog('Erro no registro: ' + error);
+      }
     });
 
   }
@@ -499,19 +501,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('back-button').addEventListener('click', groupManager);
   }
 
-  function fetchGroups() {
-    fetch('/get_groups')
-      .then(response => response.json())
-      .then(groups => {
-        const select = document.getElementById('existing-group-select');
-        groups.forEach(group => {
-          const option = document.createElement('option');
-          option.value = group.name;
-          option.textContent = group.name;
-          select.appendChild(option);
-        });
-      })
-      .catch(error => console.error('Erro ao buscar grupos:', error));
+  async function fetchGroups() {
+    try {
+      const response = await fetch('/get_groups');
+      const groups = await response.json();
+      const select = document.getElementById('existing-group-select');
+      groups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.name;
+        option.textContent = group.name;
+        select.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Erro ao buscar grupos:', error);
+    }
   }
 
   //*************************************************************************************************************//
@@ -533,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Descrição: Faz a busca no banco de dados dos status de trabalho deste usuário usando o usuário logado para
   //                posteriormente realizar o carregamento na página dos botões.
   //*************************************************************************************************************//
-  function loadUserInterface() {
+  async function loadUserInterface() {
     showLoading();
     removeSelectionScreen();
 
@@ -605,15 +608,17 @@ document.addEventListener('DOMContentLoaded', () => {
       showDialog('Configurações clicked');
     });
 
-    fetch('/status')
-      .then(response => response.json())
-      .then(statusButtons => {
-        hideLoading();
-        addButtonsToButtonContainer(statusButtons);
-        appContainer.style.display = 'block';
-        loginContainer.style.display = 'none';
-      })
-      .catch(error => console.error('Erro ao buscar status:', error));
+    try {
+      const response = await fetch('/status');
+      const statusButtons = await response.json();
+      hideLoading();
+      addButtonsToButtonContainer(statusButtons);
+      appContainer.style.display = 'block';
+      loginContainer.style.display = 'none';
+    } catch (error) {
+      hideLoading();
+      console.error('Erro ao buscar status:', error);
+    }
   }
 
   //*************************************************************************************************************//
@@ -657,81 +662,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
-
+  
     statusButtons.forEach(button => {
-      button.addEventListener('click', function () {
+      button.addEventListener('click', async function () {
         if (actionInProgress || this.classList.contains('selected')) {
           return;
         }
-
+  
         actionInProgress = true;
         disableAllStatusButtons();
-
+  
+        currentStatus = this.innerText;
+  
+        statusButtons.forEach(btn => btn.classList.remove('selected'));
+        this.classList.add('selected');
+  
+        const statusName = this.innerText;
+  
         if (!startTime) {
           startTime = new Date();
         } else {
           const endTime = new Date();
           const duration = Math.round((endTime - startTime) / 1000);
-
+  
           if (isNaN(duration)) {
             console.error('Duração calculada é NaN');
             enableAllStatusButtons();
             actionInProgress = false;
             return;
           }
-
+  
           if (currentStatus !== '') {
             const statusData = {
               username: loggedInUsername,
               status: currentStatus,
               duration: duration
             };
-
-            fetch('/update_status', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(statusData),
-            })
-              .then(response => {
-                if (!response.ok) {
-                  throw new Error('Erro na resposta do servidor');
-                }
-                return response.text();
-              })
-              .then(text => console.log(text))
-              .catch(error => console.error('Erro ao atualizar status:', error))
-              .finally(() => {
-                enableAllStatusButtons();
-                actionInProgress = false;
+  
+            try {
+              const response = await fetch('/update_status', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(statusData),
               });
-          }
-
-          startTime = new Date();
-        }
-
-        currentStatus = this.innerText;
-
-        statusButtons.forEach(btn => btn.classList.remove('selected'));
-        this.classList.add('selected');
-
-        const statusName = this.innerText;
-        fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`)
-          .then(response => response.json())
-          .then(data => {
-            if (data.requireNote) {
-              showNoteDialog(statusName);
-            } else {
+  
+              if (!response.ok) {
+                throw new Error('Erro na resposta do servidor');
+              }
+  
+              const text = await response.text();
+              console.log(text);
+            } catch (error) {
+              console.error('Erro ao atualizar status:', error);
+              showDialog('Não foi possível atualizar o status. Por favor, tente novamente.');
+            } finally {
               enableAllStatusButtons();
               actionInProgress = false;
             }
-          })
-          .catch(error => {
-            console.error('Erro ao verificar a necessidade de comentário:', error);
+          }
+  
+          startTime = new Date();
+        }
+  
+        try {
+          const response = await fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`);
+          const data = await response.json();
+  
+          if (data.requireNote) {
+            showNoteDialog(statusName);
+          } else {
             enableAllStatusButtons();
             actionInProgress = false;
-          });
+          }
+        } catch (error) {
+          console.error('Erro ao verificar a necessidade de comentário:', error);
+          enableAllStatusButtons();
+          actionInProgress = false;
+        }
       });
     });
   }
@@ -767,30 +776,32 @@ document.addEventListener('DOMContentLoaded', () => {
           noteText: noteText
         };
 
-        fetch('/submit-note', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(noteData),
-        })
-          .then(response => {
+        (async () => {
+          try {
+            const response = await fetch('/submit-note', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(noteData),
+            });
+
             if (!response.ok) {
-              throw new Error('Erro ao submeter o comentário');
+              throw new Error(`Erro: ${response.status} ${response.statusText}`);
             }
+
             console.log('Comentário submetido com sucesso');
             noteDialog.classList.add('hidden');
             noteTextArea.value = '';
-          })
-          .catch(error => {
+          } catch (error) {
             console.error('Erro:', error);
-          })
-          .finally(() => {
+          } finally {
             enableAllStatusButtons();
             submitInProgress = false;
             submitButton.disabled = false;
             actionInProgress = false;
-          });
+          }
+        })();
       } else {
         showDialog('Por favor, insira um comentário.');
         submitInProgress = false;
