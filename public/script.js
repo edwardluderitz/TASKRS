@@ -372,18 +372,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function createGroup() {
     const adminContainer = document.querySelector('.admin-container');
     adminContainer.innerHTML = `
-      <form id="create-group-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <div class="mb-4">
-              <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Nome do Grupo" required />
-          </div>
-          <button type="submit" class="admin-button">Criar</button>
-          <button type="button" id="back-button" class="admin-button">Voltar</button>
+      <form id="create-group-form">
+        <div class="mb-4 input-group">
+          <input 
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+            type="text" id="new-group-name" placeholder="Nome do Grupo" required />
+          <button type="button" id="confirm-add-group" class="confirm-button">&#10003;</button>
+        </div>
+        <button type="button" id="back-button" class="admin-button">Voltar</button>
       </form>
     `;
 
-    const form = document.getElementById('create-group-form');
-    form.addEventListener('submit', function (event) {
-      event.preventDefault();
+    document.getElementById('confirm-add-group').addEventListener('click', function () {
       const groupName = document.getElementById('new-group-name').value.trim();
 
       if (!groupName) {
@@ -413,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('back-button').addEventListener('click', groupManager);
   }
-
   //*************************************************************************************************************//
   //     Título: Edição de Grupo
   //     Descrição: Fornece funcionalidade para editar os grupos de usuários, incluindo remoção de grupos.
@@ -422,31 +421,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminContainer = document.querySelector('.admin-container');
     adminContainer.innerHTML = `
       <form id="edit-group-form">
-        <div class="mb-4 flex items-center">
+        <div class="mb-4 input-group">
           <select id="existing-group-select" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-            <option value="">Selecione</option>
+            <option value="">Selecione um grupo para renomear</option>
           </select>
-          <button type="button" id="delete-button" class="delete-button ml-2">&times;</button>
+          <button type="button" id="delete-button" class="delete-button">&times;</button>
+        </div>
+        <div class="mb-4 input-group">
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Novo Nome do Grupo" required />
+          <button type="button" id="confirm-edit-group" class="confirm-button">&#10003;</button>
         </div>
         <div class="mb-4">
-          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-group-name" placeholder="Novo Nome do Grupo" required />
+          <label for="status-buttons-select" class="block text-gray-700 text-sm font-bold mb-2">Botões de Status do Grupo:</label>
+          <select id="status-buttons-select" multiple class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" size="5">
+            <!-- Botões de status serão carregados aqui -->
+          </select>
         </div>
-        <button type="submit" class="admin-button">Editar</button>
+        <div class="mb-4 input-group">
+          <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="new-status-button" placeholder="Nome do Novo Botão de Status" />
+          <button type="button" id="confirm-add-status" class="confirm-button">&#10003;</button>
+        </div>
+        <div class="mb-4 flex items-center">
+          <input type="checkbox" id="note-status-type" class="mr-2 leading-tight">
+          <label for="note-status-type">Requer Nota</label>
+        </div>
         <button type="button" id="back-button" class="admin-button">Voltar</button>
       </form>
     `;
 
     fetchGroups();
 
+    document.getElementById('existing-group-select').addEventListener('change', function () {
+      const groupName = this.value;
+      if (groupName) {
+        fetchStatusButtons(groupName);
+      } else {
+        const statusSelect = document.getElementById('status-buttons-select');
+        statusSelect.innerHTML = '';
+      }
+    });
 
-    const form = document.getElementById('edit-group-form');
-    form.addEventListener('submit', function (event) {
-      event.preventDefault();
+    document.getElementById('confirm-edit-group').addEventListener('click', function () {
       const groupName = document.getElementById('existing-group-select').value.trim();
       const newGroupName = document.getElementById('new-group-name').value.trim();
 
-      if (!groupName || !newGroupName) {
-        showDialog('Por favor, preencha ambos os campos');
+      if (!groupName) {
+        showDialog('Por favor, selecione um grupo para renomear.');
+        return;
+      }
+
+      if (!newGroupName) {
+        showDialog('Por favor, insira o novo nome do grupo.');
         return;
       }
 
@@ -458,17 +483,36 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            showDialog('Grupo editado com sucesso');
+            showDialog('Grupo renomeado com sucesso.');
             groupManager();
           } else {
-            showDialog('Erro ao editar grupo: ' + data.message);
+            showDialog('Erro ao renomear grupo: ' + data.message);
           }
         })
         .catch(error => {
-          console.error('Erro ao editar grupo:', error);
-          showDialog('Erro ao editar grupo. Por favor, tente novamente mais tarde.');
+          console.error('Erro ao renomear grupo:', error);
+          showDialog('Erro ao renomear grupo. Por favor, tente novamente mais tarde.');
         });
     });
+
+    document.getElementById('confirm-add-status').addEventListener('click', function () {
+      addStatusButton();
+    });
+
+    const statusButtonsSelect = document.getElementById('status-buttons-select');
+    statusButtonsSelect.addEventListener('dblclick', function () {
+      const selectedOption = statusButtonsSelect.options[statusButtonsSelect.selectedIndex];
+      if (selectedOption) {
+        const statusButtonName = selectedOption.value;
+        const groupName = document.getElementById('existing-group-select').value.trim();
+
+        showDialog(`Tem certeza que deseja remover o botão de status "${statusButtonName}" do grupo "${groupName}"?`, function () {
+          deleteStatusButton(groupName, statusButtonName);
+        });
+      }
+    });
+
+    document.getElementById('back-button').addEventListener('click', groupManager);
 
     document.getElementById('delete-button').addEventListener('click', function () {
       const groupName = document.getElementById('existing-group-select').value.trim();
@@ -478,27 +522,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      fetch('/delete_group', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group_user: groupName })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            showDialog('Grupo removido com sucesso');
-            groupManager();
-          } else {
-            showDialog('Erro ao remover grupo: ' + data.message);
-          }
+      showDialog(`Tem certeza que deseja remover o grupo "${groupName}"?`, function () {
+        fetch('/delete_group', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ group_user: groupName })
         })
-        .catch(error => {
-          console.error('Erro ao remover grupo:', error);
-          showDialog('Erro ao remover grupo. Por favor, tente novamente mais tarde.');
-        });
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showDialog('Grupo removido com sucesso');
+              groupManager();
+            } else {
+              showDialog('Erro ao remover grupo: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao remover grupo:', error);
+            showDialog('Erro ao remover grupo. Por favor, tente novamente mais tarde.');
+          });
+      });
     });
-
-    document.getElementById('back-button').addEventListener('click', groupManager);
   }
 
   async function fetchGroups() {
@@ -515,6 +559,96 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('Erro ao buscar grupos:', error);
     }
+  }
+
+  async function fetchStatusButtons(groupName) {
+    try {
+      const response = await fetch(`/get_status_buttons?group_user=${encodeURIComponent(groupName)}`);
+      const statusButtons = await response.json();
+      const statusSelect = document.getElementById('status-buttons-select');
+
+      statusSelect.innerHTML = '';
+
+      statusButtons.forEach(button => {
+        const option = document.createElement('option');
+        option.value = button.buttons;
+        option.textContent = button.buttons + (button.note_status_type === 1 ? ' (Requer Nota)' : '');
+        statusSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Erro ao buscar botões de status:', error);
+      showDialog('Erro ao carregar botões de status.');
+      closeDialog();
+    }
+  }
+
+  function addStatusButton() {
+    const groupName = document.getElementById('existing-group-select').value.trim();
+    const statusButtonName = document.getElementById('new-status-button').value.trim();
+    const noteStatusType = document.getElementById('note-status-type').checked ? 1 : 0;
+
+    if (!groupName || !statusButtonName) {
+      showDialog('Por favor, preencha o nome do grupo e do botão de status');
+      return;
+    }
+
+    fetch('/add_status_button', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        group_user: groupName,
+        buttons: statusButtonName,
+        note_status_type: noteStatusType
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showDialog('Botão de status adicionado com sucesso');
+          document.getElementById('new-status-button').value = '';
+          document.getElementById('note-status-type').checked = false;
+          fetchStatusButtons(groupName);
+        } else {
+          showDialog('Erro ao adicionar botão de status: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao adicionar botão de status:', error);
+        showDialog('Erro ao adicionar botão de status. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  function deleteStatusButton(groupName, statusButtonName) {
+    fetch('/delete_status_button', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        group_user: groupName,
+        buttons: statusButtonName
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showDialog('Botão de status removido com sucesso');
+
+          fetchStatusButtons(groupName);
+        } else {
+          showDialog('Erro ao remover botão de status: ' + data.message);
+        }
+
+        closeDialog();
+      })
+      .catch(error => {
+        console.error('Erro ao remover botão de status:', error);
+        showDialog('Erro ao remover botão de status. Por favor, tente novamente mais tarde.');
+
+        closeDialog();
+      });
   }
 
   //*************************************************************************************************************//
@@ -662,43 +796,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
-  
+
     statusButtons.forEach(button => {
       button.addEventListener('click', async function () {
         if (actionInProgress || this.classList.contains('selected')) {
           return;
         }
-  
+
         actionInProgress = true;
         disableAllStatusButtons();
-  
+
         currentStatus = this.innerText;
-  
+
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
-  
+
         const statusName = this.innerText;
-  
+
         if (!startTime) {
           startTime = new Date();
         } else {
           const endTime = new Date();
           const duration = Math.round((endTime - startTime) / 1000);
-  
+
           if (isNaN(duration)) {
             console.error('Duração calculada é NaN');
             enableAllStatusButtons();
             actionInProgress = false;
             return;
           }
-  
+
           if (currentStatus !== '') {
             const statusData = {
               username: loggedInUsername,
               status: currentStatus,
               duration: duration
             };
-  
+
             try {
               const response = await fetch('/update_status', {
                 method: 'POST',
@@ -707,11 +841,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(statusData),
               });
-  
+
               if (!response.ok) {
                 throw new Error('Erro na resposta do servidor');
               }
-  
+
               const text = await response.text();
               console.log(text);
             } catch (error) {
@@ -722,14 +856,14 @@ document.addEventListener('DOMContentLoaded', () => {
               actionInProgress = false;
             }
           }
-  
+
           startTime = new Date();
         }
-  
+
         try {
           const response = await fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`);
           const data = await response.json();
-  
+
           if (data.requireNote) {
             showNoteDialog(statusName);
           } else {
@@ -852,11 +986,25 @@ document.addEventListener('DOMContentLoaded', () => {
   //     Descrição: Habilitar a caixa de Diálogo no HTML para aparecer com a mensagem designada
   //     nas instruções das funções.
   //*************************************************************************************************************//
-  function showDialog(message) {
+  function showDialog(message, confirmCallback) {
     const dialog = document.getElementById('custom-dialog');
     const messageElement = document.getElementById('dialog-message');
+    const closeDialogButton = document.getElementById('close-dialog');
+    const cancelDialogButton = document.getElementById('cancel-dialog');
+
     messageElement.textContent = message;
     dialog.classList.remove('hidden');
+
+    closeDialogButton.onclick = function () {
+      dialog.classList.add('hidden');
+      if (typeof confirmCallback === 'function') {
+        confirmCallback();
+      }
+    };
+
+    cancelDialogButton.onclick = function () {
+      dialog.classList.add('hidden');
+    };
   }
 
   function closeDialog() {

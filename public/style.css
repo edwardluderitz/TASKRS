@@ -361,23 +361,89 @@ button:hover {
   background-color: var(--hover-color);
 }
 
-#delete-button {
+#delete-button,
+#confirm-edit-group,
+#confirm-add-status,
+#confirm-add-group {
   background-color: transparent;
   border: none;
-  color: #000000;
+  color: #fff;
   background-color: rgb(255, 4, 4);
-  font-size: 22px;
-  padding: 2px 4px;
+  font-size: 16px;
+  padding: 2px;
   cursor: pointer;
-  border-radius: 10px;
-  width: 20px;
-  height: 20px;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-left: 0;
+}
+
+#confirm-edit-group,
+#confirm-add-status,
+#confirm-add-group {
+  background-color: rgb(40, 167, 69);
 }
 
 #delete-button:hover {
-  color: #cc0000;
-  background-color: rgb(0, 0, 0);
+  background-color: rgb(220, 0, 0);
+}
+
+#confirm-edit-group:hover,
+#confirm-add-status:hover,
+#confirm-add-group:hover {
+  background-color: rgb(34, 139, 58);
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  margin-bottom: 0;
+}
+
+.input-group input,
+.input-group select {
+  flex: 1;
+  padding-right: 40px;
+  height: 30px;
+  line-height: 30px;
+  margin: 0;
+}
+
+input[type="text"],
+select {
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  box-shadow: none;
+}
+
+.input-group button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+}
+
+#existing-group-select,
+#new-status-button {
+  height: 45px;
+  padding-right: 40px;
+  line-height: 30px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+#existing-group-select:focus,
+#new-status-button:focus {
+  outline: none;
+}
+
+#delete-button,
+#confirm-add-status {
+  height: 45px;
 }

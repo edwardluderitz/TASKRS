@@ -431,3 +431,66 @@ app.get('/get_groups', (req, res) => {
         res.json(results);
     });
 });
+
+//*************************************************************************************************************//
+//     Título: Busca de Botões de Status
+//     Descrição: Faz a busca dos botões de Status do Grupo no Banco.
+//*************************************************************************************************************//
+app.get('/get_status_buttons', (req, res) => {
+    const groupUser = req.query.group_user;
+
+    if (!groupUser) {
+        return res.status(400).json({ error: 'Parâmetro group_user é obrigatório' });
+    }
+
+    pool.query('SELECT buttons, note_status_type FROM status_buttons WHERE group_user = ?', [groupUser], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar botões de status' });
+        }
+        res.json(results);
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Adiciona Botões de Status do Grupo
+//     Descrição: Faz a adição de novo botões de status.
+//*************************************************************************************************************//
+app.post('/add_status_button', (req, res) => {
+    const { group_user, buttons, note_status_type } = req.body;
+
+    if (!group_user || !buttons || note_status_type === undefined) {
+        return res.status(400).json({ success: false, message: 'Dados incompletos' });
+    }
+
+    pool.query('INSERT INTO status_buttons (buttons, group_user, note_status_type) VALUES (?, ?, ?)', [buttons, group_user, note_status_type], (error) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erro ao adicionar botão de status' });
+        }
+        res.json({ success: true, message: 'Botão de status adicionado com sucesso' });
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Deleta botões de Status do Grupo
+//     Descrição: Faz a adição de novo botões de status.
+//*************************************************************************************************************//
+app.post('/delete_status_button', (req, res) => {
+    const { group_user, buttons } = req.body;
+  
+    if (!group_user || !buttons) {
+      return res.status(400).json({ success: false, message: 'Dados incompletos' });
+    }
+  
+    pool.query('DELETE FROM status_buttons WHERE group_user = ? AND buttons = ?', [group_user, buttons], (error, results) => {
+      if (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: 'Erro ao remover botão de status' });
+      }
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: 'Botão de status não encontrado' });
+      }
+      res.json({ success: true, message: 'Botão de status removido com sucesso' });
+    });
+  });
