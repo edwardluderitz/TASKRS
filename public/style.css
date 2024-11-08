@@ -362,6 +362,7 @@ button:hover {
 }
 
 #delete-button,
+#delete-user-button,
 #confirm-edit-group,
 #confirm-add-status,
 #confirm-add-group {
@@ -409,8 +410,8 @@ button:hover {
 .input-group select {
   flex: 1;
   padding-right: 40px;
-  height: 30px;
-  line-height: 30px;
+  height: auto;
+  line-height: normal;
   margin: 0;
 }
 

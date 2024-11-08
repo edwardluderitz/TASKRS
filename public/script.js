@@ -331,18 +331,354 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   //*************************************************************************************************************//
-  //     Título: Adicionar Novo Usuário
-  //     Descrição: Permite ao administrador adicionar um novo usuário ao sistema, uma parte crítica das 
-  //                funcionalidades de gestão de usuários.
+  //     Título: Cria página de Gerenciamento de Usuários
+  //     Descrição: Cria página com botões para cadastrar usuário e editar usuário.
   //*************************************************************************************************************//
   function userManager() {
-    console.log('Adicionando um novo usuário');
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = '';
+
+    const createUserButton = createAdminButton('Cadastrar Usuário', createUser);
+    const editUserButton = createAdminButton('Editar Usuário', editUser);
+
+    adminContainer.appendChild(createUserButton);
+    adminContainer.appendChild(editUserButton);
+
+    const backButton = createAdminButton('Voltar', loadAdminInterface);
+    adminContainer.appendChild(backButton);
   }
 
   //*************************************************************************************************************//
-  //     Título: Adicionar Grupo
-  //     Descrição: Fornece funcionalidade para criar novos grupos de usuários, facilitando a organização e 
-  //                gerenciamento por parte dos administradores.
+  //     Título: Página para adicionar Novo Usuário
+  //     Descrição: Cria página de Adição de usuário, permitindo inserir o nome do usuário, senha e 
+  //                confirmação de senha.
+  //*************************************************************************************************************//
+  function createUser() {
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = `
+      <form id="create-user-form">
+        <div class="mb-4">
+          <input
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="text" id="new-username" placeholder="Nome do Usuário" required />
+        </div>
+        <div class="mb-4">
+          <input
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="password" id="new-password" placeholder="Senha" required />
+        </div>
+        <div class="mb-4">
+          <input
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="password" id="confirm-new-password" placeholder="Confirme a Senha" required />
+        </div>
+        <div class="mb-4">
+          <label for="group-select" class="block text-gray-700 text-sm font-bold mb-2">Grupo do Usuário:</label>
+          <select id="group-select" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <!-- Grupos serão carregados aqui -->
+          </select>
+        </div>
+        <div class="flex space-x-2">
+          <button type="submit" class="admin-button flex-1">Cadastrar</button>
+          <button type="button" id="back-button" class="admin-button flex-1">Voltar</button>
+        </div>
+      </form>
+    `;
+
+    fetchGroupsForUserForm();
+
+    document.getElementById('create-user-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitNewUser();
+    });
+
+    document.getElementById('back-button').addEventListener('click', userManager);
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Busca de Grupos
+  //     Descrição: Faz a busca de grupos no banco para seleção na criação de usuário.
+  //*************************************************************************************************************//
+  function fetchGroupsForUserForm() {
+    fetch('/get_groups')
+      .then(response => response.json())
+      .then(groups => {
+        const groupSelect = document.getElementById('group-select');
+        groupSelect.innerHTML = '';
+        groups.forEach(group => {
+          const option = document.createElement('option');
+          option.value = group.name;
+          option.textContent = group.name;
+          groupSelect.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Erro ao buscar grupos:', error);
+        showDialog('Erro ao carregar grupos. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Submissão da criação de usuário
+  //     Descrição: Faz o envio dos dados do novo usuário para a API.
+  //*************************************************************************************************************//
+  function submitNewUser() {
+    const username = document.getElementById('new-username').value.trim();
+    const password = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-new-password').value;
+    const groupUser = document.getElementById('group-select').value;
+
+    if (!username || !password || !confirmPassword) {
+      showDialog('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showDialog('As senhas não coincidem.');
+      return;
+    }
+
+    const userData = {
+      username: username,
+      password: password,
+      group_user: groupUser
+    };
+
+    fetch('/admin/create_user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showDialog('Usuário cadastrado com sucesso.');
+          userManager();
+        } else {
+          showDialog('Erro ao cadastrar usuário: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao cadastrar usuário:', error);
+        showDialog('Erro ao cadastrar usuário. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Cria página de Edição de Usuário
+  //     Descrição: Nessa página temos um seletor de usuários criados com botão de deletá-lo ao lado, com
+  //                possibilidade de editar ou não a senha, ajustar o grupo e torná-lo admin.
+  //*************************************************************************************************************//
+  function editUser() {
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = `
+      <form id="edit-user-form">
+        <div class="mb-4 input-group">
+          <select id="user-select" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <!-- Usuários serão carregados aqui -->
+          </select>
+          <button type="button" id="delete-user-button" class="delete-button">&times;</button>
+        </div>
+        <div class="mb-4">
+          <input
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="password" id="edit-password" placeholder="Nova Senha" />
+        </div>
+        <div class="mb-4">
+          <input
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="password" id="confirm-edit-password" placeholder="Confirme a Nova Senha" />
+        </div>
+        <div class="mb-4">
+          <label for="edit-group-select" class="block text-gray-700 text-sm font-bold mb-2">Grupo do Usuário:</label>
+          <select id="edit-group-select" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            <!-- Grupos serão carregados aqui -->
+          </select>
+        </div>
+        <div class="mb-4 flex items-center">
+          <input type="checkbox" id="edit-admin-checkbox" class="mr-2 leading-tight">
+          <label for="edit-admin-checkbox">Administrador</label>
+        </div>
+        <div class="flex space-x-2">
+          <button type="submit" class="admin-button flex-1">Salvar Alterações</button>
+          <button type="button" id="back-button" class="admin-button flex-1">Voltar</button>
+        </div>
+      </form>
+    `;
+
+    fetchUsersForEditForm();
+    fetchGroupsForEditUserForm();
+
+    document.getElementById('edit-user-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitUserEdits();
+    });
+
+    document.getElementById('delete-user-button').addEventListener('click', function () {
+      const username = document.getElementById('user-select').value;
+      if (!username) {
+        showDialog('Por favor, selecione o usuário que deseja remover');
+        return;
+      }
+
+      showDialog(`Tem certeza que deseja remover o usuário "${username}"?`, function () {
+        deleteUser(username);
+      });
+    });
+
+    document.getElementById('back-button').addEventListener('click', userManager);
+  }
+
+  function deleteUser(username) {
+    fetch('/admin/delete_user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username: username })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showDialog('Usuário removido com sucesso.');
+          editUser();
+        } else {
+          showDialog('Erro ao remover usuário: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao remover usuário:', error);
+        showDialog('Erro ao remover usuário. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  function fetchUsersForEditForm() {
+    fetch('/admin/get_users')
+      .then(response => response.json())
+      .then(users => {
+        const userSelect = document.getElementById('user-select');
+        userSelect.innerHTML = '';
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.username;
+          option.textContent = user.username;
+          userSelect.appendChild(option);
+        });
+        userSelect.addEventListener('change', loadUserData);
+        if (users.length > 0) {
+          loadUserData();
+        } else {
+          document.getElementById('edit-group-select').innerHTML = '';
+          document.getElementById('edit-admin-checkbox').checked = false;
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao buscar usuários:', error);
+        showDialog('Erro ao carregar usuários. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  function fetchGroupsForEditUserForm() {
+    fetch('/get_groups')
+      .then(response => response.json())
+      .then(groups => {
+        const groupSelect = document.getElementById('edit-group-select');
+        groupSelect.innerHTML = '';
+        groups.forEach(group => {
+          const option = document.createElement('option');
+          option.value = group.name;
+          option.textContent = group.name;
+          groupSelect.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Erro ao buscar grupos:', error);
+        showDialog('Erro ao carregar grupos. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  function loadUserData() {
+    const username = document.getElementById('user-select').value;
+
+    if (!username) {
+      document.getElementById('edit-group-select').value = '';
+      document.getElementById('edit-admin-checkbox').checked = false;
+      return;
+    }
+
+    fetch(`/admin/get_user_data?username=${encodeURIComponent(username)}`)
+      .then(response => response.json())
+      .then(user => {
+        if (user) {
+          document.getElementById('edit-group-select').value = user.group_user;
+          document.getElementById('edit-admin-checkbox').checked = user.admin_type === 1;
+        } else {
+          showDialog('Usuário não encontrado.');
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao carregar dados do usuário:', error);
+        showDialog('Erro ao carregar dados do usuário. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  function submitUserEdits() {
+    const username = document.getElementById('user-select').value;
+    const password = document.getElementById('edit-password').value;
+    const confirmPassword = document.getElementById('confirm-edit-password').value;
+    const groupUser = document.getElementById('edit-group-select').value;
+    const isAdmin = document.getElementById('edit-admin-checkbox').checked ? 1 : 0;
+
+    if (!username) {
+      showDialog('Por favor, selecione um usuário.');
+      return;
+    }
+
+    const userData = {
+      username: username,
+      group_user: groupUser,
+      admin_type: isAdmin
+    };
+
+    if (password || confirmPassword) {
+      if (password !== confirmPassword) {
+        showDialog('As senhas não coincidem.');
+        return;
+      }
+      if (!password || !confirmPassword) {
+        showDialog('Por favor, preencha ambos os campos de senha.');
+        return;
+      }
+      userData.password = password;
+    }
+
+    fetch('/admin/edit_user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showDialog('Usuário atualizado com sucesso.');
+          userManager();
+        } else {
+          showDialog('Erro ao atualizar usuário: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao atualizar usuário:', error);
+        showDialog('Erro ao atualizar usuário. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Página de Gerenciamento de Grupo
+  //     Descrição: Fornece funcionalidade para criar novos grupos de usuários e editar os grupos.
   //*************************************************************************************************************//
   function groupManager() {
     const adminContainer = document.querySelector('.admin-container');
@@ -369,6 +705,10 @@ document.addEventListener('DOMContentLoaded', () => {
     adminContainer.appendChild(backButton);
   }
 
+  //*************************************************************************************************************//
+  //     Título: Criação de Grupo
+  //     Descrição: Fornece funcionalidade para criar um grupo.
+  //*************************************************************************************************************//
   function createGroup() {
     const adminContainer = document.querySelector('.admin-container');
     adminContainer.innerHTML = `
@@ -415,7 +755,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   //*************************************************************************************************************//
   //     Título: Edição de Grupo
-  //     Descrição: Fornece funcionalidade para editar os grupos de usuários, incluindo remoção de grupos.
+  //     Descrição: Fornece funcionalidade para editar os grupos de usuários, incluindo remoção de grupos e 
+  //     inserção de botões de status.
   //*************************************************************************************************************//
   function editGroup() {
     const adminContainer = document.querySelector('.admin-container');

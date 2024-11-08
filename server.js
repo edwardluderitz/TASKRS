@@ -478,19 +478,156 @@ app.post('/add_status_button', (req, res) => {
 //*************************************************************************************************************//
 app.post('/delete_status_button', (req, res) => {
     const { group_user, buttons } = req.body;
-  
+
     if (!group_user || !buttons) {
-      return res.status(400).json({ success: false, message: 'Dados incompletos' });
+        return res.status(400).json({ success: false, message: 'Dados incompletos' });
     }
-  
+
     pool.query('DELETE FROM status_buttons WHERE group_user = ? AND buttons = ?', [group_user, buttons], (error, results) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, message: 'Erro ao remover botão de status' });
-      }
-      if (results.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: 'Botão de status não encontrado' });
-      }
-      res.json({ success: true, message: 'Botão de status removido com sucesso' });
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erro ao remover botão de status' });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Botão de status não encontrado' });
+        }
+        res.json({ success: true, message: 'Botão de status removido com sucesso' });
     });
-  });
+});
+
+//*************************************************************************************************************//
+//     Título: Criar usuário através de Admin
+//     Descrição: O Admin consegue criar o usuário inserindo o login, grupo que ele fará parte e a senha.
+//*************************************************************************************************************//
+app.post('/admin/create_user', (req, res) => {
+    const { username, password, group_user, admin_type } = req.body;
+
+    pool.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro ao verificar o usuário' });
+        }
+
+        if (results.length > 0) {
+            return res.status(409).json({ success: false, message: 'Nome de usuário já existe' });
+        }
+
+        const salt = crypto.randomBytes(16).toString('hex');
+        const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+
+        pool.query('INSERT INTO users (username, group_user, admin_type, password, salt) VALUES (?, ?, ?, ?, ?)', [username, group_user, 0, hashedPassword, salt], (error) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ success: false, message: 'Erro ao salvar o usuário' });
+            }
+            res.status(201).json({ success: true, message: 'Usuário cadastrado com sucesso' });
+        });
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Obter usuários.
+//     Descrição: Essa função permite que retorne uma lista de usuários do banco.
+//*************************************************************************************************************//
+app.get('/admin/get_users', (req, res) => {
+    pool.query('SELECT username FROM users', (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar usuários' });
+        }
+        res.json(results);
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Retorna dados de usuário
+//     Descrição: Permite obter dados dos usuários como grupo, nome de usuário e função de admin.
+//*************************************************************************************************************//
+app.get('/admin/get_user_data', (req, res) => {
+    const username = req.query.username;
+
+    pool.query('SELECT username, group_user, admin_type FROM users WHERE username = ?', [username], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Erro ao buscar dados do usuário' });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+        res.json(results[0]);
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Edição do usuário
+//     Descrição: Essa função permite editar a senha do usuário, grupos do usuário e alterar a função de admin.
+//*************************************************************************************************************//
+app.post('/admin/edit_user', (req, res) => {
+    const { username, password, group_user, admin_type } = req.body;
+
+    pool.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: 'Erro ao buscar o usuário' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        }
+
+        let updateFields = {
+            group_user: group_user,
+            admin_type: admin_type
+        };
+
+        if (password) {
+            const salt = crypto.randomBytes(16).toString('hex');
+            const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+            updateFields.password = hashedPassword;
+            updateFields.salt = salt;
+        }
+
+        const fields = Object.keys(updateFields).map(field => `${field} = ?`).join(', ');
+        const values = Object.values(updateFields);
+        values.push(username);
+
+        const sql = `UPDATE users SET ${fields} WHERE username = ?`;
+
+        pool.query(sql, values, (error) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ success: false, message: 'Erro ao atualizar o usuário' });
+            }
+            res.json({ success: true, message: 'Usuário atualizado com sucesso' });
+        });
+    });
+});
+
+//*************************************************************************************************************//
+//     Título: Deletar usuário.
+//     Descrição: Essa função permite que você consiga deletar o usuário.
+//*************************************************************************************************************//
+app.post('/admin/delete_user', (req, res) => {
+    const { username } = req.body;
+
+    if (!username) {
+        return res.status(400).json({ success: false, message: 'Nome de usuário inválido' });
+    }
+
+    if (req.session.username === username) {
+        return res.status(400).json({ success: false, message: 'Você não pode deletar o usuário atualmente logado' });
+    }
+
+    pool.query('DELETE FROM users WHERE username = ?', [username], (error, results) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ success: false, message: 'Erro ao remover o usuário' });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        }
+
+        res.json({ success: true, message: 'Usuário removido com sucesso' });
+    });
+});
