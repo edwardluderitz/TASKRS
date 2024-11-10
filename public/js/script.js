@@ -38,10 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
               type="submit">
               Entrar
             </button>
-            <a href="#" id="show-register-form"
-              class="buttons-open self-center inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
-              Cadastre-se
-            </a>
           </div>
         </form>
       </div>
@@ -49,15 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(loginContainer);
 
     const loginForm = document.getElementById('login-form');
-    const registerBtn = document.getElementById('show-register-form');
 
     loginForm.addEventListener('submit', function (event) {
       event.preventDefault();
       loginUser();
-    });
-
-    registerBtn.addEventListener('click', function () {
-      showRegisterForm();
     });
   }
 
@@ -118,105 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-
-  //*************************************************************************************************************//
-  //     Título: Mostrar Formulário de Registro
-  //     Descrição: Exibe o formulário de registro para novos usuários, escondendo o formulário de login e 
-  //                preparando o ambiente para a entrada de novos dados de usuário.
-  //*************************************************************************************************************//
-  function showRegisterForm() {
-    removeLoginContainer();
-    appContainer.style.display = 'flex';
-    appContainer.style.flexDirection = 'column';
-    appContainer.style.alignItems = 'center';
-    appContainer.style.justifyContent = 'center';
-    appContainer.style.height = '100vh';
-
-    const registerContainer = document.createElement('div');
-    registerContainer.id = 'register-container';
-    registerContainer.className = 'flex items-center justify-center';
-    registerContainer.innerHTML = `
-      <div class="w-full max-w-xs">
-        <form id="register-form" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <div class="mb-4">
-            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" id="register-username" placeholder="Usuário" required />
-          </div>
-          <div class="mb-4">
-            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="password" id="register-password" placeholder="Senha" required />
-          </div>
-          <div class="mb-4">
-            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="password" id="confirm-password" placeholder="Confirme a Senha" required />
-          </div>
-          <div class="flex flex-col space-y-4">
-            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Cadastrar
-            </button>
-            <button type="button" id="back-to-login" class="w-full text-blue-500 hover:text-blue-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-              Voltar
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
-
-    appContainer.appendChild(registerContainer);
-
-    document.getElementById('back-to-login').addEventListener('click', function () {
-      appContainer.removeChild(registerContainer);
-      appContainer.innerHTML = '';
-      appContainer.style.cssText = '';
-      appContainer.style.display = 'none';
-      createLoginContainer();
-    });
-
-    const registerForm = document.getElementById('register-form');
-    registerForm.addEventListener('submit', async function (event) {
-      event.preventDefault();
-
-      const username = document.getElementById('register-username').value;
-      const password = document.getElementById('register-password').value;
-      const confirmPassword = document.getElementById('confirm-password').value;
-
-      if (password !== confirmPassword) {
-        showDialog('As senhas não coincidem!');
-        return;
-      }
-
-      const userData = {
-        username: username,
-        password: password,
-      };
-
-      try {
-        const response = await fetch('/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(userData),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error);
-        }
-
-        const data = await response.json();
-
-        showDialog('Registro concluído com sucesso!');
-        const registerContainer = document.getElementById('register-container');
-        appContainer.removeChild(registerContainer);
-        createLoginContainer();
-        appContainer.innerHTML = '';
-        appContainer.style.cssText = '';
-        appContainer.style.display = 'none';
-      } catch (error) {
-        console.error('Erro no registro:', error);
-        showDialog('Erro no registro: ' + error);
-      }
-    });
-
-  }
 
   //*************************************************************************************************************//
   //     Título: Criar Tela de Seleção de Modo
@@ -531,6 +423,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('back-button').addEventListener('click', userManager);
   }
 
+  //*************************************************************************************************************//
+  //     Título: Deletar usuário
+  //     Descrição: Função que permite que o Admin delete um usuário na página de edição de Usuário.
+  //*************************************************************************************************************//
   function deleteUser(username) {
     fetch('/admin/delete_user', {
       method: 'POST',
@@ -553,7 +449,10 @@ document.addEventListener('DOMContentLoaded', () => {
         showDialog('Erro ao remover usuário. Por favor, tente novamente mais tarde.');
       });
   }
-
+  //*************************************************************************************************************//
+  //     Título: Buscar usuários na Edição de Usuário
+  //     Descrição: Faz a busca de usuários na janela de edição de usuários.
+  //*************************************************************************************************************//
   function fetchUsersForEditForm() {
     fetch('/admin/get_users')
       .then(response => response.json())

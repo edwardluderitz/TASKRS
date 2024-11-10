@@ -38,8 +38,8 @@ app.listen(port, () => {
 //     Descrição: Intercepta requisições para script.js, lê o arquivo original, obfusca-o usando 
 //                JavaScriptObfuscator para melhorar a segurança e envia o código obfuscado como resposta.
 //*************************************************************************************************************//
-app.get('/script.js', (req, res) => {
-    fs.readFile(path.join(__dirname, 'public', 'script.js'), 'utf8', (err, data) => {
+app.get('/js/script.js', (req, res) => {
+    fs.readFile(path.join(__dirname, 'public', 'js', 'script.js'), 'utf8', (err, data) => {
         if (err) {
             console.error(err);
             res.status(500).send('Erro ao ler o arquivo');
@@ -54,7 +54,7 @@ app.get('/script.js', (req, res) => {
             simplify: true,
             stringArrayShuffle: true,
             splitStrings: true,
-            stringArrayThreshold: 0.75
+            stringArrayThreshold: 0.75,
         }).getObfuscatedCode();
 
         res.setHeader('Content-Type', 'application/javascript');
@@ -67,7 +67,6 @@ app.get('/script.js', (req, res) => {
 //     Descrição: Configura o middleware para analisar JSON e servir arquivos estáticos, especificando o tipo de 
 //                conteúdo para arquivos JavaScript para correta interpretação pelo navegador.
 //*************************************************************************************************************//
-
 app.use(express.json());
 app.use(express.static('public', {
     setHeaders: (res, path) => {
@@ -90,40 +89,6 @@ const pool = mysql.createPool({
 });
 
 console.log(pool._allConnections.length);
-
-//*************************************************************************************************************//
-//     Título: Roteamento de Registro de Usuário
-//     Descrição: Manipula pedidos de registro, verificando a existência do usuário, criptografando a senha e
-//                inserindo o novo usuário no banco de dados.
-//*************************************************************************************************************//
-app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    const groupUser = 'Suporte';
-    const adminType = 1;
-
-    pool.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Erro ao verificar o usuário' });
-        }
-
-        if (results.length > 0) {
-            return res.status(409).json({ error: 'Nome de usuário já existe' });
-        }
-
-        const salt = crypto.randomBytes(16).toString('hex');
-
-        const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-
-        pool.query('INSERT INTO users (username, group_user, admin_type, password, salt) VALUES (?, ?, ?, ?, ?)', [username, 'Suporte', 1, hashedPassword, salt], (error) => {
-            if (error) {
-                console.error(error);
-                return res.status(500).json({ error: 'Erro ao salvar o usuário' });
-            }
-            res.status(201).json({ message: 'Usuário cadastrado com sucesso' });
-        });
-    });
-});
 
 //*************************************************************************************************************//
 //     Título: Configuração de Sessões Express

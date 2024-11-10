@@ -28,7 +28,6 @@ function createWindow() {
     const loadingHTML = `
     <html>
     <head>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
         <style>
             body, html {
                 margin: 0;
@@ -44,15 +43,28 @@ function createWindow() {
                 width: 100vw;
             }
 
-            .fas.fa-spinner.fa-spin {
-                font-size: 2rem;
-                color: #4299e1;
+            .spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid rgba(0, 0, 0, 0.1);
+                border-top: 4px solid #4299e1;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                }
+
+                @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
             }
         </style>
     </head>
         <body>
             <div id="loading">
-                <i class="fas fa-spinner fa-spin"></i>
+                <div class="spinner"></div>
             </div>
         </body>
     </html>`;
