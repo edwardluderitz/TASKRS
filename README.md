@@ -4,6 +4,11 @@ TASKRS é uma ferramenta para monitoramento, organização e gestão de atividad
 
 ---
 
+## **Imagens do Projeto (Até o momento)**
+![image](https://github.com/user-attachments/assets/7bb7e9f0-5f99-448b-944f-ebe7704a22d9)
+
+---
+
 ## **Tecnologias Utilizadas**
 - **Electron**: Framework para criar aplicações desktop multiplataforma usando JavaScript, HTML e CSS.
 - **Node.js**: Plataforma para construção do backend, garantindo escalabilidade e performance.
