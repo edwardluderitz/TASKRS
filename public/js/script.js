@@ -1036,44 +1036,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
-
+  
     statusButtons.forEach(button => {
       button.addEventListener('click', async function () {
         if (actionInProgress || this.classList.contains('selected')) {
           return;
         }
-
+  
         actionInProgress = true;
         disableAllStatusButtons();
-
-        currentStatus = this.innerText;
-
+  
+        const newStatus = this.innerText;
+  
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
-
-        const statusName = this.innerText;
-
-        if (!startTime) {
-          startTime = new Date();
-        } else {
-          const endTime = new Date();
-          const duration = Math.round((endTime - startTime) / 1000);
-
-          if (isNaN(duration)) {
-            console.error('Duração calculada é NaN');
-            enableAllStatusButtons();
-            actionInProgress = false;
-            return;
-          }
-
-          if (currentStatus !== '') {
-            const statusData = {
-              username: loggedInUsername,
-              status: currentStatus,
-              duration: duration
-            };
-
-            try {
+  
+        try {
+          if (!startTime) {
+            startTime = new Date();
+          } else {
+            const endTime = new Date();
+            const duration = Math.round((endTime - startTime) / 1000);
+  
+            if (isNaN(duration)) {
+              console.error('Duração calculada é NaN');
+              return;
+            }
+  
+            if (currentStatus !== '') {
+              const statusData = {
+                username: loggedInUsername,
+                status: currentStatus,
+                duration: duration,
+              };
+  
               const response = await fetch('/update_status', {
                 method: 'POST',
                 headers: {
@@ -1081,37 +1077,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify(statusData),
               });
-
+  
               if (!response.ok) {
                 throw new Error('Erro na resposta do servidor');
               }
-
+  
               const text = await response.text();
               console.log(text);
-            } catch (error) {
-              console.error('Erro ao atualizar status:', error);
-              showDialog('Não foi possível atualizar o status. Por favor, tente novamente.');
-            } finally {
-              enableAllStatusButtons();
-              actionInProgress = false;
             }
+  
+            startTime = new Date();
           }
-
-          startTime = new Date();
-        }
-
-        try {
-          const response = await fetch(`/status/require-note?button=${encodeURIComponent(statusName)}`);
+  
+          currentStatus = newStatus;
+  
+          const response = await fetch(`/status/require-note?button=${encodeURIComponent(newStatus)}`);
           const data = await response.json();
-
+  
           if (data.requireNote) {
-            showNoteDialog(statusName);
-          } else {
-            enableAllStatusButtons();
-            actionInProgress = false;
+            showNoteDialog(newStatus);
           }
         } catch (error) {
-          console.error('Erro ao verificar a necessidade de comentário:', error);
+          console.error('Erro ao atualizar status ou verificar necessidade de nota:', error);
+          showDialog('Ocorreu um erro. Por favor, tente novamente.');
+        } finally {
           enableAllStatusButtons();
           actionInProgress = false;
         }
