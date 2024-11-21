@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     tarefasButton.addEventListener('click', () => {
-      showDialog('Tarefas clicked');
+      loadTasksInterface();
     });
 
     configuracoesButton.addEventListener('click', () => {
@@ -993,6 +993,365 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
       console.error('Erro ao buscar status:', error);
     }
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Carregar Interface de Tarefas
+  //     Descrição: Exibe a interface de tarefas com a lista de tarefas e opção para criar novas.
+  // **************************************************************************************************** //
+  function loadTasksInterface() {
+    const tasksModal = document.createElement('div');
+    tasksModal.id = 'tasks-modal';
+    tasksModal.className = 'modal';
+
+    tasksModal.innerHTML = `
+        <div class="modal-content">
+            <span id="close-tasks-modal" class="close-button">&times;</span>
+            <button id="create-task-button" class="task-button">Criar Tarefa</button>
+            <div id="tasks-container"></div>
+        </div>
+    `;
+
+    document.body.appendChild(tasksModal);
+
+    document.getElementById('close-tasks-modal').addEventListener('click', closeTasksModal);
+    document.getElementById('create-task-button').addEventListener('click', showCreateTaskForm);
+
+    fetchUserTasks();
+  }
+
+  function closeTasksModal() {
+    const tasksModal = document.getElementById('tasks-modal');
+    if (tasksModal) {
+      tasksModal.remove();
+    }
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Exibir Formulário de Criação de Tarefa
+  //     Descrição: Mostra o formulário para o usuário criar uma nova tarefa.
+  // **************************************************************************************************** //
+  function showCreateTaskForm() {
+    const createTaskModal = document.createElement('div');
+    createTaskModal.id = 'create-task-modal';
+    createTaskModal.className = 'modal';
+
+    createTaskModal.innerHTML = `
+        <div class="modal-content">
+            <span id="close-create-task-modal" class="close-button">&times;</span>
+            <form id="create-task-form">
+                <div class="mb-4">
+                    <input type="text" id="task-summary" placeholder="Resumo da Tarefa" required class="input-field">
+                </div>
+                <div class="mb-4">
+                    <textarea id="task-description" placeholder="Descrição da Tarefa" class="input-field"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="task-group">Grupo:</label>
+                    <select id="task-group" class="input-field">
+                        <!-- Grupos serão carregados aqui -->
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="task-assignee">Responsável:</label>
+                    <select id="task-assignee" class="input-field">
+                        <option value="">Selecione um usuário</option>
+                        <!-- Usuários serão carregados aqui -->
+                    </select>
+                </div>
+                <div class="flex space-x-2">
+                    <button type="submit" class="admin-button flex-1">Criar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(createTaskModal);
+
+    fetchGroupsForTaskForm();
+
+    document.getElementById('create-task-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitNewTask();
+    });
+
+    document.getElementById('close-create-task-modal').addEventListener('click', closeCreateTaskModal);
+  }
+
+  function closeCreateTaskModal() {
+    const createTaskModal = document.getElementById('create-task-modal');
+    if (createTaskModal) {
+      createTaskModal.remove();
+    }
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Carregar Grupos para Formulário de Tarefas
+  //     Descrição: Busca os grupos do banco de dados e popula o seletor no formulário.
+  // **************************************************************************************************** //
+  function fetchGroupsForTaskForm() {
+    fetch('/get_groups')
+      .then(response => response.json())
+      .then(groups => {
+        const groupSelect = document.getElementById('task-group');
+        groupSelect.innerHTML = '';
+        groups.forEach(group => {
+          const option = document.createElement('option');
+          option.value = group.name;
+          option.textContent = group.name;
+          groupSelect.appendChild(option);
+        });
+
+        groupSelect.addEventListener('change', function () {
+          const selectedGroup = this.value;
+          fetchUsersByGroup(selectedGroup);
+        });
+
+        if (groups.length > 0) {
+          fetchUsersByGroup(groups[0].name);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao buscar grupos:', error);
+        showDialog('Erro ao carregar grupos. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Carregar Usuários por Grupo
+  //     Descrição: Busca os usuários do grupo selecionado e popula o seletor de responsáveis.
+  // **************************************************************************************************** //
+  function fetchUsersByGroup(groupName) {
+    fetch(`/get_users_by_group?group_user=${encodeURIComponent(groupName)}`)
+      .then(response => response.json())
+      .then(users => {
+        const assigneeSelect = document.getElementById('task-assignee');
+        assigneeSelect.innerHTML = '<option value="">Selecione um usuário</option>';
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.username;
+          option.textContent = user.username;
+          assigneeSelect.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Erro ao buscar usuários do grupo:', error);
+        showDialog('Erro ao carregar usuários. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Submeter Nova Tarefa
+  //     Descrição: Envia os dados da nova tarefa para o servidor e trata a resposta.
+  // **************************************************************************************************** //
+  function submitNewTask() {
+    const summary = document.getElementById('task-summary').value.trim();
+    const description = document.getElementById('task-description').value.trim();
+    const assignee = document.getElementById('task-assignee').value;
+    const groupUser = document.getElementById('task-group').value;
+
+    if (!summary || !groupUser || !assignee) {
+      showDialog('Por favor, preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    const taskData = {
+      summary,
+      description,
+      assignee,
+      group_user: groupUser
+    };
+
+    fetch('/tasks/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(taskData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          closeCreateTaskModal();
+          fetchUserTasks();
+        } else {
+          showDialog('Erro ao criar tarefa: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao criar tarefa:', error);
+        showDialog('Erro ao criar tarefa. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Buscar Tarefas do Usuário
+  //     Descrição: Busca as tarefas atribuídas ao usuário logado e as exibe na interface.
+  // **************************************************************************************************** //
+  function fetchUserTasks() {
+    fetch('/tasks/user')
+      .then(response => response.json())
+      .then(tasks => {
+        const tasksContainer = document.getElementById('tasks-container');
+
+        if (!tasksContainer) {
+          return;
+        }
+        tasksContainer.innerHTML = '';
+
+        if (tasks.length === 0) {
+          tasksContainer.textContent = 'Nenhuma tarefa atribuída.';
+          return;
+        }
+
+        tasks.forEach(task => {
+          console.log('Comparando currentTaskId:', currentTaskId, 'com task.id:', task.id);
+          console.log('Tipos:', typeof currentTaskId, typeof task.id);
+          const taskElement = document.createElement('div');
+          taskElement.className = 'task-item';
+
+          let buttonText = 'Iniciar Tarefa';
+          let buttonDisabled = false;
+
+          if (currentTaskId === task.id && taskStartTime !== null) {
+            buttonText = 'Selecionado';
+            buttonDisabled = true;
+          } else if (task.status === 'In Progress') {
+            buttonText = 'Continuar Tarefa';
+            buttonDisabled = false;
+          }
+
+          taskElement.innerHTML = `
+            <h3>${task.summary}</h3>
+            <p>${task.description}</p>
+            <p>Status: ${task.status}</p>
+            <button class="start-task-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50" data-task-id="${task.id}" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>
+          `;
+          tasksContainer.appendChild(taskElement);
+        });
+
+        const startTaskButtons = document.querySelectorAll('.start-task-button');
+        startTaskButtons.forEach(button => {
+          button.addEventListener('click', function () {
+            const taskId = parseInt(this.getAttribute('data-task-id'), 10);
+
+            if (this.textContent === 'Iniciar Tarefa' || this.textContent === 'Continuar Tarefa') {
+              startTaskTimer(taskId);
+              this.disabled = true;
+            }
+          });
+        });
+      })
+      .catch(error => {
+        console.error('Erro ao buscar tarefas do usuário:', error);
+        showDialog('Erro ao carregar tarefas. Por favor, tente novamente mais tarde.');
+      });
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Iniciar Temporizador da Tarefa
+  //     Descrição: Inicia a contagem de tempo para a tarefa selecionada, pausando o status atual.
+  // **************************************************************************************************** //
+  let taskStartTime = null;
+  let currentTaskId = null;
+
+  function startTaskTimer(taskId) {
+    currentTaskId = parseInt(taskId, 10);
+    taskStartTime = new Date();
+    if (actionInProgress) {
+      showDialog('Já existe uma ação em progresso.');
+      return;
+    }
+
+    actionInProgress = true;
+
+    if (startTime && currentStatus) {
+      const endTime = new Date();
+      const duration = Math.round((endTime - startTime) / 1000);
+
+      updateStatusOnServer(currentStatus, duration);
+
+      startTime = null;
+      currentStatus = '';
+    }
+
+    const statusButtons = document.querySelectorAll('.status-btn');
+    statusButtons.forEach(button => {
+      button.classList.remove('selected');
+    });
+
+    if (taskStartTime && currentTaskId) {
+      const endTime = new Date();
+      const duration = Math.round((endTime - taskStartTime) / 1000);
+
+      updateTaskTimeOnServer(currentTaskId, duration);
+
+      taskStartTime = null;
+      currentTaskId = null;
+    }
+
+    taskStartTime = new Date();
+    currentTaskId = taskId;
+
+    updateTaskStatusOnServer(taskId, 'In Progress').then(() => {
+      fetchUserTasks();
+    });
+
+    actionInProgress = false;
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Atualizar Tempo da Tarefa no Servidor
+  //     Descrição: Envia o tempo gasto na tarefa para o servidor.
+  // **************************************************************************************************** //
+  function updateTaskTimeOnServer(taskId, duration) {
+    const data = {
+      taskId,
+      duration
+    };
+
+    return fetch('/tasks/update_time', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+      .then(response => response.json())
+      .then(result => {
+        if (result.message) {
+          console.log('Tempo da tarefa atualizado com sucesso.');
+        } else {
+          console.error('Erro ao atualizar tempo da tarefa:', result.error);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao atualizar tempo da tarefa:', error);
+      });
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Atualizar Status da Tarefa no Servidor
+  //     Descrição: Envia o status da tarefa para o servidor.
+  // **************************************************************************************************** //
+  function updateTaskStatusOnServer(taskId, status) {
+    const data = {
+      taskId,
+      status
+    };
+
+    return fetch('/tasks/update_status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+      .then(response => response.json())
+      .then(result => {
+        if (result.message) {
+          console.log('Status da tarefa atualizado com sucesso.');
+        } else {
+          console.error('Erro ao atualizar status da tarefa:', result.error);
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao atualizar status da tarefa:', error);
+      });
   }
 
   //*************************************************************************************************************//
@@ -1036,76 +1395,99 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setupStatusButtonEvents() {
     const statusButtons = document.querySelectorAll('.status-btn');
-  
+
     statusButtons.forEach(button => {
       button.addEventListener('click', async function () {
         if (actionInProgress || this.classList.contains('selected')) {
           return;
         }
-  
+
         actionInProgress = true;
-        disableAllStatusButtons();
-  
+
         const newStatus = this.innerText;
-  
+
         statusButtons.forEach(btn => btn.classList.remove('selected'));
         this.classList.add('selected');
-  
+
         try {
-          if (!startTime) {
-            startTime = new Date();
-          } else {
-            const endTime = new Date();
-            const duration = Math.round((endTime - startTime) / 1000);
-  
-            if (isNaN(duration)) {
-              console.error('Duração calculada é NaN');
-              return;
-            }
-  
-            if (currentStatus !== '') {
-              const statusData = {
-                username: loggedInUsername,
-                status: currentStatus,
-                duration: duration,
-              };
-  
-              const response = await fetch('/update_status', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(statusData),
-              });
-  
-              if (!response.ok) {
-                throw new Error('Erro na resposta do servidor');
-              }
-  
-              const text = await response.text();
-              console.log(text);
-            }
-  
-            startTime = new Date();
-          }
-  
+          await handlePreviousStatus();
+
+          await handleCurrentTask();
+
+          startTime = new Date();
           currentStatus = newStatus;
-  
+
           const response = await fetch(`/status/require-note?button=${encodeURIComponent(newStatus)}`);
           const data = await response.json();
-  
+
           if (data.requireNote) {
             showNoteDialog(newStatus);
           }
         } catch (error) {
-          console.error('Erro ao atualizar status ou verificar necessidade de nota:', error);
-          showDialog('Ocorreu um erro. Por favor, tente novamente.');
+          console.error('Erro ao atualizar status ou tarefas:', error);
+          showDialog('Erro ao atualizar. Por favor, tente novamente.');
         } finally {
-          enableAllStatusButtons();
           actionInProgress = false;
         }
       });
     });
+  }
+
+  async function handlePreviousStatus() {
+    if (startTime && currentStatus) {
+      const endTime = new Date();
+      const duration = Math.round((endTime - startTime) / 1000);
+
+      if (isNaN(duration)) {
+        console.error('Duração calculada é NaN');
+        return;
+      }
+
+      await updateStatusOnServer(currentStatus, duration);
+    }
+  }
+
+  async function handleCurrentTask() {
+    if (taskStartTime && currentTaskId) {
+      const endTime = new Date();
+      const duration = Math.round((endTime - taskStartTime) / 1000);
+
+      if (!isNaN(duration)) {
+        await updateTaskTimeOnServer(currentTaskId, duration);
+      }
+
+      taskStartTime = null;
+      currentTaskId = null;
+
+      await fetchUserTasks();
+    }
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Atualizar Status no Servidor
+  //     Descrição: Envia os dados do status atual para o servidor.
+  // **************************************************************************************************** //
+  async function updateStatusOnServer(status, duration) {
+    const statusData = {
+      username: loggedInUsername,
+      status: status,
+      duration: duration,
+    };
+
+    const response = await fetch('/update_status', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(statusData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro na resposta do servidor');
+    }
+
+    const text = await response.text();
+    console.log(text);
   }
 
   //*************************************************************************************************************//

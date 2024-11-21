@@ -596,3 +596,172 @@ app.post('/admin/delete_user', (req, res) => {
         res.json({ success: true, message: 'Usuário removido com sucesso' });
     });
 });
+
+// **************************************************************************************************** //
+//     Título: Obter Usuários por Grupo
+//     Descrição: Retorna a lista de usuários pertencentes a um grupo específico.
+// **************************************************************************************************** //
+app.get('/get_users_by_group', (req, res) => {
+    const groupUser = req.query.group_user;
+
+    if (!groupUser) {
+        return res.status(400).json({ error: 'Parâmetro group_user é obrigatório' });
+    }
+
+    pool.query('SELECT username FROM users WHERE group_user = ?', [groupUser], (error, results) => {
+        if (error) {
+            console.error('Erro ao buscar usuários do grupo:', error);
+            return res.status(500).json({ error: 'Erro ao buscar usuários' });
+        }
+        res.json(results);
+    });
+});
+
+// **************************************************************************************************** //
+//     Título: Criar Nova Tarefa
+//     Descrição: Permite que um usuário crie uma nova tarefa com os detalhes fornecidos.
+// **************************************************************************************************** //
+app.post('/tasks/create', (req, res) => {
+    const { summary, description, assignee, group_user } = req.body;
+    const creator = req.session.username;
+
+    if (!creator) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    const taskData = {
+        summary,
+        description,
+        assignee: assignee || null,
+        group_user,
+        creator
+    };
+
+    pool.query('INSERT INTO tasks SET ?', taskData, (error, results) => {
+        if (error) {
+            console.error('Erro ao criar tarefa:', error);
+            return res.status(500).json({ error: 'Erro ao criar tarefa' });
+        }
+        res.json({ message: 'Tarefa criada com sucesso', taskId: results.insertId });
+    });
+});
+
+// **************************************************************************************************** //
+//     Título: Listar Tarefas
+//     Descrição: Retorna todas as tarefas disponíveis para o grupo do usuário.
+// **************************************************************************************************** //
+app.get('/tasks', (req, res) => {
+    const groupUser = req.session.groupUser;
+
+    if (!groupUser) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    pool.query('SELECT * FROM tasks WHERE group_user = ?', [groupUser], (error, results) => {
+        if (error) {
+            console.error('Erro ao buscar tarefas:', error);
+            return res.status(500).json({ error: 'Erro ao buscar tarefas' });
+        }
+        res.json(results);
+    });
+});
+
+
+
+// **************************************************************************************************** //
+//     Título: Atualizar Status da Tarefa
+//     Descrição: Atualiza o status de uma tarefa específica.
+// **************************************************************************************************** //
+app.post('/tasks/update_status', (req, res) => {
+    const { taskId, status } = req.body;
+    const username = req.session.username;
+
+    if (!username) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    pool.query('SELECT * FROM tasks WHERE id = ?', [taskId], (error, results) => {
+        if (error) {
+            console.error('Erro ao buscar tarefa:', error);
+            return res.status(500).json({ error: 'Erro ao buscar tarefa' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Tarefa não encontrada' });
+        }
+
+        const task = results[0];
+
+        if (task.assignee !== username) {
+            return res.status(403).json({ error: 'Usuário não autorizado' });
+        }
+
+        pool.query('UPDATE tasks SET status = ? WHERE id = ?', [status, taskId], (updateError) => {
+            if (updateError) {
+                console.error('Erro ao atualizar status da tarefa:', updateError);
+                return res.status(500).json({ error: 'Erro ao atualizar tarefa' });
+            }
+            res.json({ message: 'Status da tarefa atualizado com sucesso' });
+        });
+    });
+});
+
+// **************************************************************************************************** //
+//     Título: Atualizar Tempo da Tarefa
+//     Descrição: Atualiza o tempo e status de uma tarefa específica.
+// **************************************************************************************************** //
+app.post('/tasks/update_time', (req, res) => {
+    const { taskId, duration } = req.body;
+    const username = req.session.username;
+
+    if (!username) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    pool.query('SELECT * FROM tasks WHERE id = ?', [taskId], (error, results) => {
+        if (error) {
+            console.error('Erro ao buscar tarefa:', error);
+            return res.status(500).json({ error: 'Erro ao buscar tarefa' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Tarefa não encontrada' });
+        }
+
+        const task = results[0];
+
+        if (task.assignee !== username) {
+            return res.status(403).json({ error: 'Usuário não autorizado' });
+        }
+
+        const newTime = (task.time || 0) + parseInt(duration);
+
+        pool.query('UPDATE tasks SET time = ? WHERE id = ?', [newTime, taskId], (updateError) => {
+            if (updateError) {
+                console.error('Erro ao atualizar tarefa:', updateError);
+                return res.status(500).json({ error: 'Erro ao atualizar tarefa' });
+            }
+            res.json({ message: 'Tarefa atualizada com sucesso' });
+        });
+    });
+});
+
+// **************************************************************************************************** //
+//     Título: Obter Tarefas do Usuário
+//     Descrição: Retorna as tarefas atribuídas ao usuário logado.
+// **************************************************************************************************** //
+app.get('/tasks/user', (req, res) => {
+    const username = req.session.username;
+
+    if (!username) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+
+    pool.query('SELECT * FROM tasks WHERE assignee = ?', [username], (error, results) => {
+        if (error) {
+            console.error('Erro ao buscar tarefas do usuário:', error);
+            return res.status(500).json({ error: 'Erro ao buscar tarefas' });
+        }
+        res.json(results);
+    });
+});
