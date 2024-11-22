@@ -757,7 +757,7 @@ app.get('/tasks/user', (req, res) => {
         return res.status(401).json({ error: 'Usuário não autenticado' });
     }
 
-    pool.query('SELECT * FROM tasks WHERE assignee = ?', [username], (error, results) => {
+    pool.query('SELECT * FROM tasks WHERE assignee = ? AND status != "Done"', [username], (error, results) => {
         if (error) {
             console.error('Erro ao buscar tarefas do usuário:', error);
             return res.status(500).json({ error: 'Erro ao buscar tarefas' });

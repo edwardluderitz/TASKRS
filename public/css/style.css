@@ -479,6 +479,10 @@ select {
   }
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .task-button {
   background-color: var(--primary-color);
   color: white;
@@ -514,15 +518,38 @@ select {
   margin: 10px 0;
 }
 
+.task-buttons {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  gap: 10px;
+  width: 100%;
+}
+
 .start-task-button {
   background-color: var(--primary-color);
   color: white;
-  padding: 5px 10px;
+  padding: 8px;
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
+  flex: 7 1 0%;
 }
 
 .start-task-button:hover {
   background-color: var(--hover-color);
+}
+
+.end-task-button {
+  background-color: #e53e3e;
+  color: white;
+  padding: 8px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  flex: 3 1 0%;
+}
+
+.end-task-button:hover {
+  background-color: #c53030;
 }

@@ -1203,27 +1203,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tasks.forEach(task => {
-          console.log('Comparando currentTaskId:', currentTaskId, 'com task.id:', task.id);
-          console.log('Tipos:', typeof currentTaskId, typeof task.id);
           const taskElement = document.createElement('div');
           taskElement.className = 'task-item';
 
-          let buttonText = 'Iniciar Tarefa';
-          let buttonDisabled = false;
+          let startButtonText = 'Iniciar Tarefa';
+          let startButtonDisabled = false;
 
           if (currentTaskId === task.id && taskStartTime !== null) {
-            buttonText = 'Selecionado';
-            buttonDisabled = true;
+            startButtonText = 'Selecionado';
+            startButtonDisabled = true;
           } else if (task.status === 'In Progress') {
-            buttonText = 'Continuar Tarefa';
-            buttonDisabled = false;
+            startButtonText = 'Continuar Tarefa';
+            startButtonDisabled = false;
           }
 
           taskElement.innerHTML = `
             <h3>${task.summary}</h3>
             <p>${task.description}</p>
             <p>Status: ${task.status}</p>
-            <button class="start-task-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50" data-task-id="${task.id}" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>
+            <div class="task-buttons">
+              <button class="start-task-button bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${startButtonDisabled ? 'disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50' : ''}" data-task-id="${task.id}" ${startButtonDisabled ? 'disabled' : ''}>${startButtonText}</button>
+              <button class="end-task-button" data-task-id="${task.id}">Encerrar</button>
+            </div>
           `;
           tasksContainer.appendChild(taskElement);
         });
@@ -1236,7 +1237,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.textContent === 'Iniciar Tarefa' || this.textContent === 'Continuar Tarefa') {
               startTaskTimer(taskId);
               this.disabled = true;
+              this.classList.add('disabled:bg-gray-400', 'disabled:cursor-not-allowed', 'disabled:opacity-50');
             }
+          });
+        });
+
+        const endTaskButtons = document.querySelectorAll('.end-task-button');
+        endTaskButtons.forEach(button => {
+          button.addEventListener('click', function () {
+            const taskId = parseInt(this.getAttribute('data-task-id'), 10);
+            endTask(taskId);
           });
         });
       })
@@ -1352,6 +1362,52 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(error => {
         console.error('Erro ao atualizar status da tarefa:', error);
       });
+  }
+
+  // **************************************************************************************************** //
+  //     Título: Encerrar tarefa
+  //     Descrição: Encerra a tarefa nas tarefas disponíveis.
+  // **************************************************************************************************** //
+  function endTask(taskId) {
+    if (actionInProgress) {
+      showDialog('Já existe uma ação em progresso.');
+      return;
+    }
+    actionInProgress = true;
+
+    if (taskStartTime && currentTaskId === taskId) {
+      const endTime = new Date();
+      const duration = Math.round((endTime - taskStartTime) / 1000);
+
+      updateTaskTimeOnServer(currentTaskId, duration)
+        .then(() => {
+          taskStartTime = null;
+          currentTaskId = null;
+          return updateTaskStatusOnServer(taskId, 'Done');
+        })
+        .then(() => {
+          fetchUserTasks();
+        })
+        .catch(error => {
+          console.error('Erro ao encerrar a tarefa:', error);
+          showDialog('Erro ao encerrar a tarefa. Por favor, tente novamente.');
+        })
+        .finally(() => {
+          actionInProgress = false;
+        });
+    } else {
+      updateTaskStatusOnServer(taskId, 'Done')
+        .then(() => {
+          fetchUserTasks();
+        })
+        .catch(error => {
+          console.error('Erro ao encerrar a tarefa:', error);
+          showDialog('Erro ao encerrar a tarefa. Por favor, tente novamente.');
+        })
+        .finally(() => {
+          actionInProgress = false;
+        });
+    }
   }
 
   //*************************************************************************************************************//
