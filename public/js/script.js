@@ -1263,9 +1263,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let taskStartTime = null;
   let currentTaskId = null;
 
-  function startTaskTimer(taskId) {
-    currentTaskId = parseInt(taskId, 10);
-    taskStartTime = new Date();
+  async function startTaskTimer(taskId) {
     if (actionInProgress) {
       showDialog('Já existe uma ação em progresso.');
       return;
@@ -1273,39 +1271,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     actionInProgress = true;
 
-    if (startTime && currentStatus) {
-      const endTime = new Date();
-      const duration = Math.round((endTime - startTime) / 1000);
+    try {
+      await handlePreviousStatus();
+      await handleCurrentTask();
 
-      updateStatusOnServer(currentStatus, duration);
+      const statusButtons = document.querySelectorAll('.status-btn');
+      statusButtons.forEach(button => button.classList.remove('selected'));
 
-      startTime = null;
-      currentStatus = '';
+      taskStartTime = new Date();
+      currentTaskId = parseInt(taskId, 10);
+
+      await updateTaskStatusOnServer(taskId, 'In Progress');
+      await fetchUserTasks();
+    } catch (error) {
+      console.error('Erro ao iniciar a tarefa:', error);
+      showDialog('Erro ao iniciar a tarefa. Por favor, tente novamente.');
+    } finally {
+      actionInProgress = false;
     }
-
-    const statusButtons = document.querySelectorAll('.status-btn');
-    statusButtons.forEach(button => {
-      button.classList.remove('selected');
-    });
-
-    if (taskStartTime && currentTaskId) {
-      const endTime = new Date();
-      const duration = Math.round((endTime - taskStartTime) / 1000);
-
-      updateTaskTimeOnServer(currentTaskId, duration);
-
-      taskStartTime = null;
-      currentTaskId = null;
-    }
-
-    taskStartTime = new Date();
-    currentTaskId = taskId;
-
-    updateTaskStatusOnServer(taskId, 'In Progress').then(() => {
-      fetchUserTasks();
-    });
-
-    actionInProgress = false;
   }
 
   // **************************************************************************************************** //
