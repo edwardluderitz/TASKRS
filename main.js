@@ -25,6 +25,13 @@ function createWindow() {
         }
     });
 
+    mainWindow.on('close', (event) => {
+        if (mainWindow) {
+            event.preventDefault();
+            mainWindow.webContents.send('app-close');
+        }
+    });
+
     const loadingHTML = `
     <html>
     <head>
@@ -102,6 +109,11 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
+});
+
+ipcMain.on('app-closed', () => {
+    mainWindow = null;
+    app.quit();
 });
 
 app.on('activate', () => {

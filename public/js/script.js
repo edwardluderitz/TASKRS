@@ -988,6 +988,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // **************************************************************************************************** //
+  //     Título: Logout via navbar no Modo Usuário.
+  //     Descrição: Caso o usuário esteja com uma tarefa ou botão de status ativo no momento, ao clicar
+  //                no logout, é enviado para o servidor o tempo utilizado na ação setada.
+  // **************************************************************************************************** //
   function handleLogout() {
     if (actionInProgress) {
       return;
@@ -1040,6 +1045,53 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })();
   }
+
+  // **************************************************************************************************** //
+  //     Título: Logout por fechamento da Janela
+  //     Descrição: Quando o usuário fecha a aplicação por outros meios (como clicar no "X"), 
+  //                o aplicativo registra o status ou tarefa selecionados no momento, envia essas
+  //                informações ao  servidor e só então permite que a aplicação seja encerrada.                
+  // **************************************************************************************************** //
+  window.electron.ipcRenderer.on('app-close', async () => {
+    if (actionInProgress) return;
+
+    actionInProgress = true;
+
+    try {
+      if (startTime && currentStatus) {
+        const endTime = new Date();
+        const duration = Math.round((endTime - startTime) / 1000);
+
+        if (!isNaN(duration) && duration > 0) {
+          await updateStatusOnServer(currentStatus, duration);
+        }
+
+        startTime = null;
+        currentStatus = '';
+      }
+
+      if (taskStartTime && currentTaskId) {
+        const endTime = new Date();
+        const duration = Math.round((endTime - taskStartTime) / 1000);
+
+        if (!isNaN(duration) && duration > 0) {
+          await updateTaskTimeOnServer(currentTaskId, duration);
+        }
+
+        taskStartTime = null;
+        currentTaskId = null;
+      }
+
+      await fetch('/logout', { method: 'GET', credentials: 'include' });
+
+      window.electron.ipcRenderer.send('app-closed');
+    } catch (error) {
+      console.error('Erro ao processar fechamento da aplicação:', error);
+      showDialog('Erro ao fechar a aplicação. Por favor, tente novamente.');
+    } finally {
+      actionInProgress = false;
+    }
+  });
 
   // **************************************************************************************************** //
   //     Título: Carregar Interface de Tarefas
