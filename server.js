@@ -152,9 +152,11 @@ app.post('/login', (req, res) => {
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            return console.error(err);
+            console.error('Erro ao destruir a sessão:', err);
+            return res.status(500).json({ error: 'Erro ao efetuar logout' });
         }
-        res.redirect('/');
+        res.clearCookie('connect.sid');
+        res.json({ message: 'Logout efetuado com sucesso' });
     });
 });
 

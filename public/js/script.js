@@ -961,14 +961,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    logoutButton.addEventListener('click', () => {
-      createLoginContainer();
-      loginContainer.style.display = 'flex';
-      appContainer.innerHTML = '';
-      appContainer.style.cssText = '';
-      appContainer.style.display = 'none';
-
-    });
+    logoutButton.addEventListener('click', handleLogout);
 
     pontoButton.addEventListener('click', () => {
       showDialog('Ponto clicked');
@@ -993,6 +986,59 @@ document.addEventListener('DOMContentLoaded', () => {
       hideLoading();
       console.error('Erro ao buscar status:', error);
     }
+  }
+
+  function handleLogout() {
+    if (actionInProgress) {
+      return;
+    }
+
+    actionInProgress = true;
+
+    (async () => {
+      try {
+        if (startTime && currentStatus) {
+          const endTime = new Date();
+          const duration = Math.round((endTime - startTime) / 1000);
+
+          if (!isNaN(duration)) {
+            await updateStatusOnServer(currentStatus, duration);
+          }
+
+          startTime = null;
+          currentStatus = '';
+        }
+
+        if (taskStartTime && currentTaskId) {
+          const endTime = new Date();
+          const duration = Math.round((endTime - taskStartTime) / 1000);
+
+          if (!isNaN(duration)) {
+            await updateTaskTimeOnServer(currentTaskId, duration);
+          }
+
+          taskStartTime = null;
+          currentTaskId = null;
+        }
+
+        createLoginContainer();
+        loginContainer.style.display = 'flex';
+        appContainer.innerHTML = '';
+        appContainer.style.cssText = '';
+        appContainer.style.display = 'none';
+
+        await fetch('/logout', {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+      } catch (error) {
+        console.error('Erro ao processar logout:', error);
+        showDialog('Erro ao processar logout. Por favor, tente novamente.');
+      } finally {
+        actionInProgress = false;
+      }
+    })();
   }
 
   // **************************************************************************************************** //
