@@ -767,3 +767,183 @@ app.get('/tasks/user', (req, res) => {
         res.json(results);
     });
 });
+
+// **************************************************************************************************** //
+//     Título: Ponto - Iniciar dia
+//     Descrição: Verifica se o usuário já iniciou o dia.
+// **************************************************************************************************** //
+app.get('/check_start_time', (req, res) => {
+    const username = req.session.username;
+    const date = new Date().toISOString().split('T')[0];
+
+    pool.query('SELECT start_time FROM user_shifts WHERE username = ? AND date = ?', [username, date], (error, results) => {
+        if (error) {
+            console.error('Erro ao verificar start_time:', error);
+            return res.status(500).json({ error: 'Erro ao verificar start_time' });
+        }
+
+        if (results.length > 0 && results[0].start_time) {
+            res.json({ startTimeExists: true });
+        } else {
+            res.json({ startTimeExists: false });
+        }
+    });
+});
+
+app.post('/register_start_time', (req, res) => {
+    const username = req.session.username;
+    const date = new Date().toISOString().split('T')[0];
+    const startTime = new Date().toTimeString().split(' ')[0];
+
+    pool.query('SELECT id FROM user_shifts WHERE username = ? AND date = ?', [username, date], (error, results) => {
+        if (error) {
+            console.error('Erro ao verificar start_time:', error);
+            return res.status(500).json({ success: false, message: 'Erro ao verificar start_time' });
+        }
+
+        if (results.length > 0) {
+            const shiftId = results[0].id;
+            pool.query('UPDATE user_shifts SET start_time = ? WHERE id = ?', [startTime, shiftId], (updateError) => {
+                if (updateError) {
+                    console.error('Erro ao atualizar start_time:', updateError);
+                    return res.status(500).json({ success: false, message: 'Erro ao atualizar start_time' });
+                }
+                res.json({ success: true, message: 'Horário de início atualizado com sucesso.' });
+            });
+        } else {
+            pool.query(
+                'INSERT INTO user_shifts (username, date, start_time) VALUES (?, ?, ?)',
+                [username, date, startTime],
+                (insertError) => {
+                    if (insertError) {
+                        console.error('Erro ao registrar start_time:', insertError);
+                        return res.status(500).json({ success: false, message: 'Erro ao registrar start_time' });
+                    }
+                    res.json({ success: true, message: 'Horário de início registrado com sucesso.' });
+                }
+            );
+        }
+    });
+});
+
+app.post('/register_break_start', (req, res) => {
+    const username = req.session.username;
+    const date = new Date().toISOString().split('T')[0];
+    const breakStartTime = new Date().toTimeString().split(' ')[0];
+
+    pool.query('SELECT break_start, break_end FROM user_shifts WHERE username = ? AND date = ?', [username, date], (error, results) => {
+        if (error) {
+            console.error('Erro ao verificar status do intervalo:', error);
+            return res.status(500).json({ success: false, message: 'Erro ao verificar status do intervalo' });
+        }
+
+        if (results.length > 0) {
+            const shift = results[0];
+
+            if (!shift.break_start) {
+                pool.query('UPDATE user_shifts SET break_start = ? WHERE username = ? AND date = ?', [breakStartTime, username, date], (updateError) => {
+                    if (updateError) {
+                        console.error('Erro ao registrar break_start:', updateError);
+                        return res.status(500).json({ success: false, message: 'Erro ao registrar break_start' });
+                    }
+                    return res.json({ success: true, message: 'Início do intervalo registrado com sucesso.' });
+                });
+            } else {
+                return res.json({ success: false, message: 'Você já registrou o início do intervalo hoje.' });
+            }
+        } else {
+            pool.query('INSERT INTO user_shifts (username, date, break_start) VALUES (?, ?, ?)', [username, date, breakStartTime], (insertError) => {
+                if (insertError) {
+                    console.error('Erro ao inserir break_start:', insertError);
+                    return res.status(500).json({ success: false, message: 'Erro ao inserir break_start' });
+                }
+                return res.json({ success: true, message: 'Início do intervalo registrado com sucesso.' });
+            });
+        }
+    });
+});
+
+
+app.get('/check_break_end', (req, res) => {
+    const username = req.session.username;
+    const date = new Date().toISOString().split('T')[0];
+
+    pool.query('SELECT break_start, break_end FROM user_shifts WHERE username = ? AND date = ?', [username, date], (error, results) => {
+        if (error) {
+            console.error('Erro ao verificar break_end:', error);
+            return res.status(500).json({ error: 'Erro ao verificar break_end' });
+        }
+
+        if (results.length > 0 && results[0].break_start && !results[0].break_end) {
+            res.json({ shouldSetBreakEnd: true });
+        } else {
+            res.json({ shouldSetBreakEnd: false });
+        }
+    });
+});
+
+app.post('/register_break_end', (req, res) => {
+    const username = req.session.username;
+    const date = new Date().toISOString().split('T')[0];
+    const breakEndTime = new Date().toTimeString().split(' ')[0];
+
+    pool.query('SELECT * FROM user_shifts WHERE username = ? AND date = ?', [username, date], (error, results) => {
+        if (error) {
+            console.error('Erro ao registrar break_end:', error);
+            return res.status(500).json({ success: false, message: 'Erro ao registrar break_end' });
+        }
+
+        if (results.length > 0) {
+            const shift = results[0];
+            if (shift.break_start && !shift.break_end) {
+                pool.query('UPDATE user_shifts SET break_end = ? WHERE id = ?', [breakEndTime, shift.id], (err) => {
+                    if (err) {
+                        console.error('Erro ao atualizar break_end:', err);
+                        return res.status(500).json({ success: false, message: 'Erro ao atualizar break_end' });
+                    }
+                    res.json({ success: true });
+                });
+            } else {
+                res.json({ success: false, message: 'Não é possível registrar break_end. Verifique se break_start está registrado e break_end não está registrado.' });
+            }
+        } else {
+            res.json({ success: false, message: 'Nenhum registro encontrado para registrar break_end.' });
+        }
+    });
+});
+
+app.post('/register_end_time', (req, res) => {
+    const username = req.session.username;
+    const date = new Date().toISOString().split('T')[0];
+    const endTime = new Date().toTimeString().split(' ')[0];
+
+    pool.query('SELECT id FROM user_shifts WHERE username = ? AND date = ?', [username, date], (error, results) => {
+        if (error) {
+            console.error('Erro ao verificar end_time:', error);
+            return res.status(500).json({ success: false, message: 'Erro ao verificar end_time' });
+        }
+
+        if (results.length > 0) {
+            const shiftId = results[0].id;
+            pool.query('UPDATE user_shifts SET end_time = ? WHERE id = ?', [endTime, shiftId], (updateError) => {
+                if (updateError) {
+                    console.error('Erro ao atualizar end_time:', updateError);
+                    return res.status(500).json({ success: false, message: 'Erro ao atualizar end_time' });
+                }
+                res.json({ success: true});
+            });
+        } else {
+            pool.query(
+                'INSERT INTO user_shifts (username, date, end_time) VALUES (?, ?, ?)',
+                [username, date, endTime],
+                (insertError) => {
+                    if (insertError) {
+                        console.error('Erro ao registrar end_time:', insertError);
+                        return res.status(500).json({ success: false, message: 'Erro ao registrar end_time' });
+                    }
+                    res.json({ success: true});
+                }
+            );
+        }
+    });
+});

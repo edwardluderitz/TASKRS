@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let startTime;
   let currentStatus = '';
   let loggedInUsername = '';
+  let startTimeRegistered = false;
+  let breakEndRegistered = false;
 
   const appContainer = document.getElementById('app-container');
   const loginContainer = document.getElementById('login-container');
@@ -916,22 +918,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const navbar = document.createElement('div');
     navbar.innerHTML = `
-    <div class="bg-gray-800 text-white p-2">
-      <div class="container flex justify-between items-center">
-        <div class="dropdown">
-          <button id="dropdownMenuButton" class="dropdown-button">☰</button>
-          <div id="dropdownMenu" class="dropdown-menu hidden">
-            <a href="#" id="ponto" class="dropdown-item">Ponto</a>
-            <a href="#" id="tarefas" class="dropdown-item">Tarefas</a>
-            <a href="#" id="configuracoes" class="dropdown-item">Configurações</a>
-            <div class="separator"></div>
-            <a href="#" id="alwaysOnTopButton" class="dropdown-item">Sempre no Topo</a>
-            <a href="#" id="logout" class="dropdown-item">Logout</a>
+      <div class="bg-gray-800 text-white p-2">
+        <div class="container flex justify-between items-center">
+          <div class="dropdown">
+            <button id="dropdownMenuButton" class="dropdown-button">☰</button>
+            <div id="dropdownMenu" class="dropdown-menu hidden">
+              <a href="#" id="ponto" class="dropdown-item">Ponto</a>
+              <a href="#" id="intervalo" class="dropdown-item">Intervalo</a>
+              <a href="#" id="tarefas" class="dropdown-item">Tarefas</a>
+              <div class="separator"></div>
+              <a href="#" id="alwaysOnTopButton" class="dropdown-item">Sempre no Topo</a>
+              <a href="#" id="logout" class="dropdown-item">Logout</a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
     appContainer.appendChild(navbar);
 
     const mainSection = document.createElement('section');
@@ -947,8 +949,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropdownButton = document.getElementById('dropdownMenuButton');
     const dropdownMenu = document.getElementById('dropdownMenu');
     const pontoButton = document.getElementById('ponto');
+    const intervaloButton = document.getElementById('intervalo');
     const tarefasButton = document.getElementById('tarefas');
-    const configuracoesButton = document.getElementById('configuracoes');
     const logoutButton = document.getElementById('logout');
 
     dropdownButton.addEventListener('click', () => {
@@ -963,16 +965,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutButton.addEventListener('click', handleLogout);
 
-    pontoButton.addEventListener('click', () => {
-      showDialog('Ponto clicked');
-    });
+    intervaloButton.addEventListener('click', handleBreakButton);
 
     tarefasButton.addEventListener('click', () => {
       loadTasksInterface();
-    });
-
-    configuracoesButton.addEventListener('click', () => {
-      showDialog('Configurações clicked');
     });
 
     try {
@@ -982,12 +978,121 @@ document.addEventListener('DOMContentLoaded', () => {
       addButtonsToButtonContainer(statusButtons);
       appContainer.style.display = 'block';
       loginContainer.style.display = 'none';
+      await checkStartTimeOnLogin();
     } catch (error) {
       hideLoading();
       console.error('Erro ao buscar status:', error);
     }
   }
 
+  async function checkStartTimeOnLogin() {
+    try {
+      const response = await fetch('/check_start_time', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (data.startTimeExists) {
+        startTimeRegistered = true;
+      } else {
+        startTimeRegistered = false;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar start_time:', error);
+      startTimeRegistered = false;
+    }
+  }
+
+  async function handleBreakButton() {
+    if (actionInProgress) {
+      return;
+    }
+    actionInProgress = true;
+
+    try {
+      const response = await fetch('/register_break_start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showDialog('Início do intervalo registrado com sucesso.');
+      } else {
+        showDialog(`Aviso: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao registrar início do intervalo:', error);
+      showDialog('Erro ao registrar início do intervalo. Por favor, tente novamente.');
+    } finally {
+      actionInProgress = false;
+    }
+  }
+
+  async function checkAndSetStartTime() {
+    if (!startTimeRegistered) {
+      const registerResponse = await fetch('/register_start_time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const registerData = await registerResponse.json();
+
+      if (!registerData.success) {
+        throw new Error(registerData.message);
+      } else {
+        startTimeRegistered = true;
+      }
+    }
+
+  }
+
+  async function checkAndSetBreakEnd() {
+    const response = await fetch('/check_break_end', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const data = await response.json();
+
+    if (data.shouldSetBreakEnd) {
+      breakEndRegistered = true;
+      const registerResponse = await fetch('/register_break_end', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+
+      const registerData = await registerResponse.json();
+
+      if (!registerData.success) {
+        throw new Error(registerData.message);
+      } else {
+        showDialog('Retorno do intervalo registrado com sucesso.');
+      }
+    }
+  }
+
+  async function registerEndTime() {
+    const response = await fetch('/register_end_time', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message);
+    } else {
+      console.log('End time registrado com sucesso.');
+    }
+  }
   // **************************************************************************************************** //
   //     Título: Logout via navbar no Modo Usuário.
   //     Descrição: Caso o usuário esteja com uma tarefa ou botão de status ativo no momento, ao clicar
@@ -1026,6 +1131,14 @@ document.addEventListener('DOMContentLoaded', () => {
           currentTaskId = null;
         }
 
+        try {
+          await registerEndTime();
+        } catch (error) {
+          console.error('Erro ao registrar end_time:', error);
+        }
+        loggedInUsername = '';
+        startTimeRegistered = false;
+        breakEndRegistered = false;
         createLoginContainer();
         loginContainer.style.display = 'flex';
         appContainer.innerHTML = '';
@@ -1053,6 +1166,11 @@ document.addEventListener('DOMContentLoaded', () => {
   //                informações ao  servidor e só então permite que a aplicação seja encerrada.                
   // **************************************************************************************************** //
   window.electron.ipcRenderer.on('app-close', async () => {
+    if (!loggedInUsername) {
+      window.electron.ipcRenderer.send('app-closed');
+      return;
+    }
+
     if (actionInProgress) return;
 
     actionInProgress = true;
@@ -1082,6 +1200,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTaskId = null;
       }
 
+      await registerEndTime();
+      startTimeRegistered = false;
+      breakEndRegistered = false;
       await fetch('/logout', { method: 'GET', credentials: 'include' });
 
       window.electron.ipcRenderer.send('app-closed');
@@ -1370,6 +1491,12 @@ document.addEventListener('DOMContentLoaded', () => {
     actionInProgress = true;
 
     try {
+      if (!startTimeRegistered) {
+        await checkAndSetStartTime();
+      }
+      if (!breakEndRegistered) {
+        await checkAndSetBreakEnd();
+      }
       await handlePreviousStatus();
       await handleCurrentTask();
 
@@ -1547,6 +1674,12 @@ document.addEventListener('DOMContentLoaded', () => {
         this.classList.add('selected');
 
         try {
+          if (!startTimeRegistered) {
+            await checkAndSetStartTime();
+          }
+          if (!breakEndRegistered) {
+            await checkAndSetBreakEnd();
+          }
           await handlePreviousStatus();
 
           await handleCurrentTask();
