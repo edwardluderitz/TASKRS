@@ -947,3 +947,23 @@ app.post('/register_end_time', (req, res) => {
         }
     });
 });
+
+// **************************************************************************************************** //
+//     Título: Ponto no Modo Usuário
+//     Descrição: Usuário abre janela do Ponto Relógio e obtem informações de suas jornadas.
+// **************************************************************************************************** //
+app.get('/user_shifts', (req, res) => {
+    const username = req.session.username;
+  
+    if (!username) {
+      return res.status(401).json({ error: 'Usuário não autenticado' });
+    }
+  
+    pool.query('SELECT date, start_time, break_start, break_end, end_time FROM user_shifts WHERE username = ? ORDER BY date DESC', [username], (error, results) => {
+      if (error) {
+        console.error('Erro ao buscar turnos do usuário:', error);
+        return res.status(500).json({ error: 'Erro ao buscar turnos' });
+      }
+      res.json(results);
+    });
+  });

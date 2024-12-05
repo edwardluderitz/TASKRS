@@ -1650,6 +1650,69 @@ select {
   background-color: #c53030;
 }
 
+.ponto-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 1rem;
+}
+
+.ponto-table th,
+.ponto-table td {
+  border: 1px solid #ddd;
+  padding: 0.5em;
+  text-align: center;
+}
+
+.ponto-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.ponto-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.ponto-table tr:hover {
+  background-color: #eaeaea;
+}
+
+.modal-content {
+  position: relative;
+  padding: 1em;
+}
+
+.static-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 768px) {
+  .ponto-table {
+    font-size: 0.9rem;
+  }
+
+  .ponto-table th,
+  .ponto-table td {
+    padding: 0.4em;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .ponto-table {
+    font-size: 0.8rem;
+  }
+
+  .ponto-table th,
+  .ponto-table td {
+    padding: 0.3em;
+    word-wrap: break-word;
+  }
+}
+
 .hover\:bg-blue-700:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));

@@ -963,12 +963,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    logoutButton.addEventListener('click', handleLogout);
+    pontoButton.addEventListener('click', () => {
+      loadPontoInterface();
+      dropdownMenu.classList.add('hidden'); 
+    });
 
+    logoutButton.addEventListener('click', handleLogout);
     intervaloButton.addEventListener('click', handleBreakButton);
 
     tarefasButton.addEventListener('click', () => {
       loadTasksInterface();
+      dropdownMenu.classList.add('hidden'); 
     });
 
     try {
@@ -1859,6 +1864,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alwaysOnTopButton.addEventListener('click', function () {
       const shouldSetAlwaysOnTop = this.classList.toggle('toggle-on');
       window.electron.ipcRenderer.send('toggle-always-on-top', shouldSetAlwaysOnTop);
+      dropdownMenu.classList.add('hidden'); 
     });
   }
 
@@ -1894,3 +1900,67 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('close-dialog').addEventListener('click', closeDialog);
 });
+
+function loadPontoInterface() {
+  const pontoModal = document.createElement('div');
+  pontoModal.id = 'ponto-modal';
+  pontoModal.className = 'modal';
+
+  pontoModal.innerHTML = `
+    <div class="modal-content" style="max-width: 90%; overflow-x: auto;">
+      <span id="close-ponto-modal" class="close-button static-close">&times;</span>
+      <div id="ponto-container"></div>
+    </div>
+  `;
+
+  document.body.appendChild(pontoModal);
+  document.getElementById('close-ponto-modal').addEventListener('click', closePontoModal);
+  fetchUserShifts();
+}
+
+function closePontoModal() {
+  document.getElementById('ponto-modal')?.remove();
+}
+
+function fetchUserShifts() {
+  fetch('/user_shifts')
+    .then(response => response.json())
+    .then(shifts => {
+      const pontoContainer = document.getElementById('ponto-container');
+      if (!pontoContainer) return;
+
+      pontoContainer.innerHTML = shifts.length
+        ? `
+          <table class="ponto-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Ida Intervalo</th>
+                <th>Volta Intervalo</th>
+                <th>Saída</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${shifts.map(shift => `
+                <tr>
+                  <td>${formatDate(shift.date)}</td>
+                  <td>${shift.start_time || '-'}</td>
+                  <td>${shift.break_start || '-'}</td>
+                  <td>${shift.break_end || '-'}</td>
+                  <td>${shift.end_time || '-'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        `
+        : 'Nenhum registro de ponto encontrado.';
+    })
+    .catch(error => {
+      console.error('Erro ao buscar pontos do usuário:', error);
+      showDialog('Erro ao carregar pontos. Por favor, tente novamente mais tarde.');
+    });
+}
+
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
