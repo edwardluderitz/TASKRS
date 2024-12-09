@@ -182,9 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const userManagerButton = createAdminButton('Gerenciamento de Usuários', userManager);
     const groupManagerButton = createAdminButton('Gerenciamento de Grupos', groupManager);
+    const reportExportButton = createAdminButton('Exportação de Relatórios', reportExportManager);
 
     adminContainer.appendChild(userManagerButton);
     adminContainer.appendChild(groupManagerButton);
+    adminContainer.appendChild(reportExportButton);
 
     appContainer.appendChild(adminContainer);
 
@@ -238,6 +240,33 @@ document.addEventListener('DOMContentLoaded', () => {
     adminContainer.appendChild(createUserButton);
     adminContainer.appendChild(editUserButton);
 
+    const backButton = createAdminButton('Voltar', loadAdminInterface);
+    adminContainer.appendChild(backButton);
+  }
+
+  //*************************************************************************************************************//
+  //     Título: Cria página de Exportação de Relatórios
+  //     Descrição: Esta página permite exportar relatórios do banco de dados sobre o uso da funcionalidades do
+  //                taskrs.
+  //*************************************************************************************************************//
+  function reportExportManager() {
+    const adminContainer = document.querySelector('.admin-container');
+    adminContainer.innerHTML = '';
+  
+    const instructionText = document.createElement('p');
+    instructionText.textContent = 'Selecione a tabela que deseja exportar:';
+    adminContainer.appendChild(instructionText);
+  
+    const userShiftsButton = createAdminButton('Exportar Jornadas', () => exportTable('user_shifts'));
+    const tasksButton = createAdminButton('Exportar Tarefas', () => exportTable('tasks'));
+    const statusUserButton = createAdminButton('Exportar Tempo de Status', () => exportTable('status_user'));
+    const noteStatusButton = createAdminButton('Exportar Notas de Status', () => exportTable('note_status'));
+  
+    adminContainer.appendChild(userShiftsButton);
+    adminContainer.appendChild(tasksButton);
+    adminContainer.appendChild(statusUserButton);
+    adminContainer.appendChild(noteStatusButton);
+  
     const backButton = createAdminButton('Voltar', loadAdminInterface);
     adminContainer.appendChild(backButton);
   }
@@ -894,6 +923,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   //*************************************************************************************************************//
+  //     Título: Exportação de Tabelas para os Relatórios
+  //     Descrição: Função que permite o administrador fazer o download dos relatórios através dos respectivos
+  //                botões referente as tabelas.
+  //*************************************************************************************************************//
+  function exportTable(tableName) {
+    window.electron.ipcRenderer.invoke('select-directory').then((selectedPath) => {
+      if (selectedPath) {
+        fetch(`/export_table?table=${encodeURIComponent(tableName)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ outputPath: selectedPath })
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showDialog(`Tabela "${tableName}" exportada com sucesso em ${selectedPath}`);
+            } else {
+              showDialog(`Erro ao exportar tabela "${tableName}": ${data.message}`);
+            }
+          })
+          .catch(error => {
+            console.error(`Erro ao exportar tabela "${tableName}":`, error);
+            showDialog(`Erro ao exportar tabela "${tableName}". Por favor, tente novamente mais tarde.`);
+          });
+      }
+    });
+  }
+  //*************************************************************************************************************//
   //     Título: Animação de Carregamento
   //     Descrição: Essas funções habilitam e desabilitam a animação de carregamento no centro da página.
   //*************************************************************************************************************//
@@ -965,7 +1022,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     pontoButton.addEventListener('click', () => {
       loadPontoInterface();
-      dropdownMenu.classList.add('hidden'); 
+      dropdownMenu.classList.add('hidden');
     });
 
     logoutButton.addEventListener('click', handleLogout);
@@ -973,7 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tarefasButton.addEventListener('click', () => {
       loadTasksInterface();
-      dropdownMenu.classList.add('hidden'); 
+      dropdownMenu.classList.add('hidden');
     });
 
     try {
@@ -1864,7 +1921,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alwaysOnTopButton.addEventListener('click', function () {
       const shouldSetAlwaysOnTop = this.classList.toggle('toggle-on');
       window.electron.ipcRenderer.send('toggle-always-on-top', shouldSetAlwaysOnTop);
-      dropdownMenu.classList.add('hidden'); 
+      dropdownMenu.classList.add('hidden');
     });
   }
 

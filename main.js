@@ -1,6 +1,6 @@
 /* MAIN.JS */
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const expressApp = require('./server.js');
 const path = require('path');
 
@@ -121,3 +121,19 @@ app.on('activate', () => {
         createWindow();
     }
 });
+
+//*************************************************************************************************************//
+//     Título: Configuração do IPC para Seleção de Diretório para exportação de relatórios.
+//     Descrição: Configura o IPC Main para selecionar a pasta que o administrador vai querer exportar os
+//                relatórios das tabelas.
+//*************************************************************************************************************//
+ipcMain.handle('select-directory', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory']
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    } else {
+      return result.filePaths[0];
+    }
+  });

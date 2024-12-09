@@ -10,6 +10,7 @@ const mysql = require('mysql');
 const app = express();
 const fs = require('fs');
 const path = require('path');
+const csvWriter = require('csv-writer');
 const crypto = require('crypto');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 const session = require('express-session');
@@ -965,5 +966,117 @@ app.get('/user_shifts', (req, res) => {
         return res.status(500).json({ error: 'Erro ao buscar turnos' });
       }
       res.json(results);
+    });
+  });
+
+
+// **************************************************************************************************** //
+//     Título: Rota para Exportação de Relatórios.
+//     Descrição: Administrador consegue obter acesso a Relatórios das Tabelas de Ponto, Tarefas, Nota
+//                de Status e Tempo nos Status.
+// **************************************************************************************************** //
+app.post('/export_table', (req, res) => {
+    if (!req.session.username) {
+      return res.status(401).json({ success: false, message: 'Não autenticado' });
+    }
+  
+    const username = req.session.username;
+  
+    pool.query('SELECT admin_type FROM users WHERE username = ?', [username], (error, results) => {
+      if (error) {
+        console.error('Erro ao verificar tipo de administrador:', error);
+        return res.status(500).json({ success: false, message: 'Erro ao verificar permissões' });
+      }
+  
+      if (results.length === 0 || results[0].admin_type !== 1) {
+        return res.status(403).json({ success: false, message: 'Permissão negada' });
+      }
+  
+      const tableName = req.query.table;
+      const { outputPath } = req.body;
+  
+      if (!tableName || !outputPath) {
+        return res.status(400).json({ success: false, message: 'Parâmetros inválidos' });
+      }
+  
+      const allowedTables = ['user_shifts', 'tasks', 'status_user', 'note_status'];
+      if (!allowedTables.includes(tableName)) {
+        return res.status(400).json({ success: false, message: 'Tabela não permitida' });
+      }
+  
+      pool.query(`SELECT * FROM ${tableName}`, (err, rows) => {
+        if (err) {
+          console.error(`Erro ao consultar tabela ${tableName}:`, err);
+          return res.status(500).json({ success: false, message: `Erro ao consultar tabela ${tableName}` });
+        }
+  
+        if (rows.length === 0) {
+          return res.status(404).json({ success: false, message: `Tabela ${tableName} está vazia` });
+        }
+  
+        const filePath = path.join(outputPath, `${tableName}.csv`);
+  
+        const createCsvWriter = csvWriter.createObjectCsvWriter;
+        const header = Object.keys(rows[0]).map(key => ({ id: key, title: key }));
+  
+        function formatDate(date) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          return `${day}/${month}/${year}`;
+        }
+  
+        function formatDateTime(date) {
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const seconds = String(date.getSeconds()).padStart(2, '0');
+          return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+        }
+  
+        const dateFields = {
+          'user_shifts': ['date', 'start_time', 'break_start', 'break_end', 'end_time'],
+          'tasks': [],
+          'status_user': ['date'],
+          'note_status': ['note_date']
+        };
+  
+        const formattedRows = rows.map(row => {
+          let formattedRow = { ...row };
+          const fieldsToFormat = dateFields[tableName];
+  
+          fieldsToFormat.forEach(field => {
+            if (formattedRow[field] instanceof Date) {
+              if (field.includes('time')) {
+                formattedRow[field] = formattedRow[field].toTimeString().split(' ')[0];
+              } else if (field.includes('date') && formattedRow[field].getHours() !== 0) {
+                formattedRow[field] = formatDateTime(formattedRow[field]);
+              } else {
+                formattedRow[field] = formatDate(formattedRow[field]);
+              }
+            }
+          });
+  
+          return formattedRow;
+        });
+  
+        const csvWriterInstance = createCsvWriter({
+          path: filePath,
+          fieldDelimiter: ';',
+          header: header
+        });
+  
+        csvWriterInstance.writeRecords(formattedRows)
+          .then(() => {
+            console.log(`Tabela ${tableName} exportada com sucesso para ${filePath}`);
+            res.json({ success: true, message: `Tabela ${tableName} exportada com sucesso` });
+          })
+          .catch(writeErr => {
+            console.error('Erro ao escrever CSV:', writeErr);
+            res.status(500).json({ success: false, message: 'Erro ao escrever arquivo CSV' });
+          });
+      });
     });
   });

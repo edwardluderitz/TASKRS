@@ -15,6 +15,11 @@ contextBridge.exposeInMainWorld('electron', {
       if (validChannels.includes(channel)) {
         ipcRenderer.on(channel, (event, ...args) => func(...args));
       }
+    },
+    invoke: (channel, args) => {
+      if (channel === 'select-directory') {
+        return ipcRenderer.invoke(channel, args);
+      }
     }
   }
 });
