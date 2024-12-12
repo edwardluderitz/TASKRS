@@ -1330,14 +1330,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="mb-4">
                     <label for="task-group">Grupo:</label>
                     <select id="task-group" class="input-field">
-                        <!-- Grupos serão carregados aqui -->
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="task-assignee">Responsável:</label>
                     <select id="task-assignee" class="input-field">
                         <option value="">Selecione um usuário</option>
-                        <!-- Usuários serão carregados aqui -->
                     </select>
                 </div>
                 <div class="flex space-x-2">
